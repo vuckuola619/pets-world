@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { useState, useCallback } from "react";
-import { MapPin, Shuffle, Globe, Search } from "lucide-react";
+import { MapPin, Shuffle, Globe, Search, Leaf } from "lucide-react";
 import { t } from "../lib/i18n";
 import { countries, type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
@@ -39,35 +39,63 @@ export default function Home(): React.JSX.Element {
   }, [flyTo]);
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-zinc-50 text-zinc-900 overflow-hidden">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-zinc-200 bg-white px-4 z-20">
+    <div className="flex h-screen w-screen flex-col overflow-hidden" style={{ background: 'var(--natura-surface)' }}>
+      {/* ─── Premium Header ─── */}
+      <header className="glass-header flex h-14 shrink-0 items-center gap-3 px-4 z-20">
         <MobileSidebar />
-        <MapPin size={18} className="text-zinc-400" />
-        <span className="text-sm font-semibold text-zinc-800">
-          {t(locale).title}
-        </span>
-        <span className="text-xs text-zinc-400 hidden sm:inline">
-          {filtered.length} {t(locale).countries}
-        </span>
+
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-natura-gradient text-white">
+            <Leaf size={16} className="drop-shadow-sm" />
+          </div>
+          <div className="hidden sm:flex flex-col">
+            <span className="text-sm font-semibold font-[var(--font-heading)] text-foreground leading-tight">
+              {t(locale).title}
+            </span>
+            <span className="text-[10px] text-muted-foreground leading-tight">
+              {filtered.length} {t(locale).countries} · 9 Continents
+            </span>
+          </div>
+          <span className="sm:hidden text-sm font-semibold text-foreground">
+            {t(locale).title}
+          </span>
+        </div>
+
         <div className="flex-1" />
-        <button onClick={() => useMapStore.getState().setSearchOpen(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors">
-          <Search size={16} />
-          <span className="hidden sm:inline text-xs text-zinc-400">⌘K</span>
+
+        {/* Action buttons */}
+        <button
+          onClick={() => useMapStore.getState().setSearchOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+        >
+          <Search size={15} />
+          <span className="hidden sm:inline text-xs text-muted-foreground">⌘K</span>
         </button>
-        <button onClick={() => setLocale(locale === 'id' ? 'en' : 'id')} className="flex items-center gap-1 px-3 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors">
-          <Globe size={16} />
-          {locale === 'id' ? 'EN' : 'ID'}
+
+        <button
+          onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+        >
+          <Globe size={15} />
+          <span className="text-xs font-medium">{locale === 'id' ? 'EN' : 'ID'}</span>
         </button>
+
         <button
           onClick={randomAnimal}
-          className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors duration-150 shadow-sm"
+          className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium text-primary-foreground transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95"
+          style={{
+            background: 'linear-gradient(135deg, var(--natura-forest), var(--natura-emerald))',
+          }}
         >
-          <Shuffle size={14} />
+          <Shuffle size={13} />
           {t(locale).random}
         </button>
       </header>
 
       <AnimalSearch />
+
+      {/* ─── Main Content ─── */}
       <div className="flex flex-1 overflow-hidden relative">
         <Sidebar />
         <MapView viewState={viewState} setViewState={setViewState} />

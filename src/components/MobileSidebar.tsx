@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { Search, Menu, X } from "lucide-react";
-import { countries, type AnimalEntry, continents } from "../data/countries";
+import { type AnimalEntry, continents } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { audioService } from "./AudioService";

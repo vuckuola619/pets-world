@@ -6,9 +6,9 @@ import { Plus, Minus, RotateCcw, Layers } from "lucide-react";
 import { useMapStore, type MapStyleName } from "../store/useMapStore";
 
 const mapStyleLabels: Record<MapStyleName, string> = {
-  dark: "Dark",
-  voyager: "Colorful",
-  satellite: "Minimal",
+  dark: "🌙 Dark",
+  voyager: "🗺️ Color",
+  satellite: "✦ Minimal",
 };
 
 interface MapControlsProps {
@@ -17,7 +17,7 @@ interface MapControlsProps {
   onResetView: () => void;
 }
 
-/** Map zoom, reset, and style controls */
+/** Premium map zoom, reset, and style controls */
 export default function MapControls({ viewState, setViewState, onResetView }: MapControlsProps): React.JSX.Element {
   const { mapStyle, setMapStyle } = useMapStore();
 
@@ -36,19 +36,35 @@ export default function MapControls({ viewState, setViewState, onResetView }: Ma
   }, [mapStyle, setMapStyle]);
 
   return (
-    <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
-      <button onClick={zoomIn} className="map-control-btn bg-white rounded-lg w-12 h-12 md:w-10 md:h-10 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 border border-zinc-200 shadow-sm" title="Zoom in">
+    <div className="absolute top-4 right-4 flex flex-col gap-1.5 z-10">
+      <button
+        onClick={zoomIn}
+        className="glass-card map-control-btn rounded-xl w-11 h-11 md:w-10 md:h-10 flex items-center justify-center text-foreground/70 hover:text-foreground transition-all duration-200"
+        title="Zoom in"
+      >
         <Plus size={16} />
       </button>
-      <button onClick={zoomOut} className="map-control-btn bg-white rounded-lg w-12 h-12 md:w-10 md:h-10 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 border border-zinc-200 shadow-sm" title="Zoom out">
+      <button
+        onClick={zoomOut}
+        className="glass-card map-control-btn rounded-xl w-11 h-11 md:w-10 md:h-10 flex items-center justify-center text-foreground/70 hover:text-foreground transition-all duration-200"
+        title="Zoom out"
+      >
         <Minus size={16} />
       </button>
-      <button onClick={onResetView} className="map-control-btn bg-white rounded-lg w-12 h-12 md:w-10 md:h-10 flex items-center justify-center text-zinc-600 hover:bg-zinc-50 border border-zinc-200 shadow-sm" title="Reset view">
+      <button
+        onClick={onResetView}
+        className="glass-card map-control-btn rounded-xl w-11 h-11 md:w-10 md:h-10 flex items-center justify-center text-foreground/70 hover:text-foreground transition-all duration-200"
+        title="Reset view"
+      >
         <RotateCcw size={16} />
       </button>
-      <button onClick={cycleMapStyle} className="map-control-btn bg-white rounded-lg px-3 h-12 md:h-10 flex items-center justify-center text-xs font-medium text-zinc-600 hover:bg-zinc-50 border border-zinc-200 shadow-sm gap-1.5" title="Switch map style">
+      <button
+        onClick={cycleMapStyle}
+        className="glass-card map-control-btn rounded-xl px-3 h-11 md:h-10 flex items-center justify-center text-xs font-medium text-foreground/70 hover:text-foreground gap-1.5 transition-all duration-200"
+        title="Switch map style"
+      >
         <Layers size={14} />
-        {mapStyleLabels[mapStyle]}
+        <span className="hidden md:inline">{mapStyleLabels[mapStyle]}</span>
       </button>
     </div>
   );

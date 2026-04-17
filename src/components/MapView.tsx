@@ -16,6 +16,7 @@ import { useAnimalMedia } from "../hooks/useAnimalMedia";
 import MobileDetailPanel from "./MobileDetailPanel";
 import MapSkeleton from "./MapSkeleton";
 import Image from "next/image";
+import Link from "next/link";
 const STATUS_CODE: Record<string, string> = {
   'Critically Endangered': 'CR', 'Endangered': 'EN', 'Vulnerable': 'VU',
   'Near Threatened': 'NT', 'Least Concern': 'LC', 'Data Deficient': 'DD',
@@ -295,7 +296,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
           if (!pos) return null;
           return (
             <div
-              className="hidden md:block"
+              className="hidden md:block animate-fade-in-scale"
               style={{
                 position: 'absolute',
                 left: pos.x,
@@ -305,20 +306,20 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                 pointerEvents: 'auto',
               }}
             >
-              <div className="w-3 h-3 bg-white border-b border-r border-zinc-200 rotate-45 absolute -bottom-1.5 left-1/2 -translate-x-1/2" />
-              <div className="bg-white rounded-lg border border-zinc-200 shadow-md p-3 min-w-[160px]">
-                <div className="font-semibold text-base flex items-center gap-2 text-zinc-800">
+              <div className="glass-card rounded-xl p-3 min-w-[180px] shadow-lg">
+                <div className="font-semibold text-sm flex items-center gap-2 text-foreground">
                   <span>{hovered.flag}</span>
                   <span>{hovered.country}</span>
                 </div>
-                <div className="text-sm text-zinc-500 mt-1">
-                  {hovered.emoji} {hovered.animal}
+                <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                  <span className="text-lg">{hovered.emoji}</span>
+                  <span className="font-medium text-foreground">{hovered.animal}</span>
                 </div>
-                <div className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
+                <div className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
                   {hovered.funFacts[0]}
                 </div>
                 <div
-                  className="mt-2 text-[10px] px-2 py-0.5 rounded-full inline-block"
+                  className="mt-2 text-[10px] px-2 py-0.5 rounded-full inline-block font-medium"
                   style={{
                     background: `${CONTINENT_COLORS[hovered.region]}15`,
                     color: CONTINENT_COLORS[hovered.region],
@@ -360,14 +361,14 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
           return (
             <div
               ref={popupRef}
-              className="hidden md:block fixed z-20"
+              className="hidden md:block fixed z-20 animate-fade-in-scale"
               style={{ left, top }}
             >
-              <div className="bg-white rounded-lg border border-zinc-200 shadow-lg p-4 text-sm" style={{ width: CARD_W, maxHeight: 'calc(100vh - 40px)', overflowY: 'auto' }}>
-                {/* 1:1 square image, centered */}
+              <div className="glass-card rounded-2xl shadow-xl p-4 text-sm" style={{ width: CARD_W, maxHeight: 'calc(100vh - 40px)', overflowY: 'auto' }}>
+                {/* Image */}
                 <div
-                  className="rounded-lg overflow-hidden bg-zinc-50 mb-3"
-                  style={{ width: IMG_SIZE, height: IMG_SIZE, margin: '0 auto' }}
+                  className="rounded-xl overflow-hidden mb-3"
+                  style={{ width: IMG_SIZE, height: IMG_SIZE, margin: '0 auto', background: 'var(--accent)' }}
                 >
                   {imageLoading || (!imageUrl || hasImgError) ? (
                     <div className="flex items-center justify-center w-full h-full">
@@ -382,46 +383,54 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     />
                   )}
                 </div>
-                <div className="text-base font-semibold flex items-center gap-2 text-zinc-800">
+                <div className="text-sm font-semibold flex items-center gap-2 text-foreground">
                   <span>{selected.flag}</span>
                   <span>{selected.country}</span>
                 </div>
-                <div className="mt-1 flex items-center gap-2 text-zinc-600">
+                <div className="mt-1 flex items-center gap-2">
                   <span className="text-2xl">{selected.emoji}</span>
                   <div className="flex-1">
-                    <div className="font-medium text-zinc-700">{selected.animal}</div>
-                    <div className="text-xs text-zinc-400 italic">{selected.scientificName}</div>
+                    <div className="font-semibold text-foreground font-[var(--font-heading)]">{selected.animal}</div>
+                    <div className="text-[11px] text-muted-foreground italic">{selected.scientificName}</div>
                   </div>
-                  <button onClick={playSound} className="w-9 h-9 flex items-center justify-center rounded-full bg-zinc-100 hover:bg-zinc-200 transition-colors">
+                  <button onClick={playSound} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors" style={{ background: 'var(--accent)' }}>
                     {isPlaying ? '🔊' : '🔈'}
                   </button>
                 </div>
-                <div className="mt-2 flex items-center gap-2 flex-wrap">
-                  <div className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">
+                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                  <div className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--accent)', color: 'var(--natura-emerald)' }}>
                     {tr.classification[selected.classification as keyof typeof tr.classification] ?? selected.classification}
                   </div>
                   <div
-                    className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    className="text-[10px] px-2 py-0.5 rounded-full font-bold"
                     style={{
                       background: `${IUCN_CONFIG[STATUS_CODE[selected.conservationStatus] || 'LC']?.bg ?? '#888'}20`,
                       color: IUCN_CONFIG[STATUS_CODE[selected.conservationStatus] || 'LC']?.bg ?? '#888',
                     }}
                   >
-                    {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
+                    {STATUS_CODE[selected.conservationStatus] || 'LC'} · {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
                   </div>
-                  <div className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">
-                    Pop: {selected.population}
+                  <div className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${CONTINENT_COLORS[selected.region]}15`, color: CONTINENT_COLORS[selected.region] }}>
+                    {selected.region}
                   </div>
                 </div>
-                <div className="mt-1.5 text-xs text-zinc-500 italic">{selected.habitat}</div>
-                <ul className="mt-3 space-y-1.5 text-xs text-zinc-500 leading-relaxed">
-                  {selected.funFacts.map((f, i) => (
+                <ul className="mt-2.5 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                  {selected.funFacts.slice(0, 3).map((f, i) => (
                     <li key={i} className="flex gap-1.5">
-                      <span className="shrink-0" style={{ color: CONTINENT_COLORS[selected.region] }}>•</span>
+                      <span className="shrink-0 text-xs font-bold" style={{ color: CONTINENT_COLORS[selected.region] }}>{i + 1}.</span>
                       <span>{f}</span>
                     </li>
                   ))}
                 </ul>
+                <Link
+                  href={`/animal/${selected.slug}`}
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-primary-foreground transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-95"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--natura-forest), var(--natura-emerald))',
+                  }}
+                >
+                  Full Profile →
+                </Link>
               </div>
             </div>
           );
@@ -432,17 +441,17 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
 
       {/* IUCN Legend */}
       <div className="hidden md:block absolute bottom-4 left-4 z-10">
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg border border-zinc-200 shadow-sm px-3 py-2">
-          <div className="text-[9px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">IUCN Status</div>
-          <div className="grid grid-cols-3 gap-x-3 gap-y-1">
+        <div className="glass-card rounded-xl shadow-sm px-3 py-2.5">
+          <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">IUCN Status</div>
+          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
             {["LC", "NT", "VU", "EN", "CR", "EX"].map((code) => (
-              <div key={code} className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: IUCN_CONFIG[code]?.bg ?? "#888" }} />
-                <span className="text-[10px] text-zinc-600 font-medium">{code}</span>
+              <div key={code} className="flex items-center gap-1.5 group">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/5 group-hover:scale-125 transition-transform duration-200" style={{ background: IUCN_CONFIG[code]?.bg ?? "#888" }} />
+                <span className="text-[10px] text-foreground/70 font-medium">{code}</span>
               </div>
             ))}
           </div>
-          <div className="mt-1 text-[9px] text-zinc-400">{viewState.zoom.toFixed(1)}x</div>
+          <div className="mt-1.5 text-[9px] text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
         </div>
       </div>
     </main>

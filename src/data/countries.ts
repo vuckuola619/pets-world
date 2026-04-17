@@ -1,10 +1,11 @@
 import { z } from 'zod'
 import rawData from './animals.json'
-import type { Animal } from '../types/animal'
+// Animal type is used via the Zod schema below
 
 /** Legacy schema for backward compat with existing components */
 export const animalSchema = z.object({
   id: z.string(),
+  slug: z.string(),
   country: z.string(),
   flag: z.string(),
   lat: z.number(),
@@ -14,6 +15,7 @@ export const animalSchema = z.object({
   scientificName: z.string(),
   emoji: z.string(),
   classification: z.string(),
+  diet: z.string(),
   conservationStatus: z.enum(['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Data Deficient']),
   indigenous: z.boolean(),
   funFacts: z.array(z.string()),

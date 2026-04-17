@@ -1,6 +1,9 @@
 {
-  "name": "pets-world",
-  "version": "0.1.0",
+  "name": "world-wildlife-atlas",
+  "version": "1.0.0",
+  "description": "Interactive species explorer — discover 186+ wildlife species across 9 continents on an interactive globe",
+  "keywords": ["wildlife", "atlas", "animals", "conservation", "iucn", "map", "education", "next.js"],
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",

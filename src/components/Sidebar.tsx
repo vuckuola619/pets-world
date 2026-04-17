@@ -1,16 +1,17 @@
 "use client"
 import React from 'react';
 
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { countries, type AnimalEntry, continents } from "../data/countries";
+import { type AnimalEntry, continents } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
 import { IUCN_CONFIG } from "../lib/iucn";
 import AnimalListSkeleton from "./AnimalListSkeleton";
+import Link from "next/link";
 
 const STATUS_CODE: Record<string, string> = {
   'Critically Endangered': 'CR', 'Endangered': 'EN', 'Vulnerable': 'VU',
@@ -23,21 +24,36 @@ const CONTINENT_COLORS: Record<string, string> = {
   "Middle East": "#c084fc", Arctic: "#93c5fd", Antarctic: "#e0f2fe",
 };
 
+const CONTINENT_EMOJI: Record<string, string> = {
+  "All": "🌍",
+  "North America": "🦅", "South America": "🦎", Europe: "🦌",
+  Africa: "🦁", Asia: "🐼", Oceania: "🦘",
+  "Middle East": "🐪", Arctic: "🐻‍❄️", Antarctic: "🐧",
+};
+
 /** Desktop sidebar with virtualized animal list grouped by classification */
 export default function Sidebar(): React.JSX.Element {
   const { searchQuery, setSearchQuery, activeRegion, setActiveRegion, selectedId, sidebarHoveredId, setSidebarHoveredId, locale } = useMapStore();
   const tr = t(locale);
   const filtered = useFilteredAnimals();
   const parentRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Force re-measure after layout settles
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   // Group by classification for sticky headers
   const groupedItems = useMemo(() => {
     const groups: ({ type: 'header'; classification: string; id: string } | { type: 'animal'; animal: AnimalEntry; id: string })[] = [];
     let lastClass = '';
+    let headerIdx = 0;
     for (const c of filtered) {
       if (c.classification !== lastClass) {
         lastClass = c.classification;
-        groups.push({ type: 'header', classification: c.classification, id: `h-${c.classification}` });
+        groups.push({ type: 'header', classification: c.classification, id: `h-${c.classification}-${headerIdx++}` });
       }
       groups.push({ type: 'animal', animal: c, id: c.id });
     }
@@ -47,8 +63,9 @@ export default function Sidebar(): React.JSX.Element {
   const virtualizer = useVirtualizer({
     count: groupedItems.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (i) => groupedItems[i].type === 'header' ? 32 : 64,
+    estimateSize: (i) => groupedItems[i].type === 'header' ? 36 : 72,
     overscan: 10,
+    enabled: mounted,
   });
 
   // Scroll to selected animal when selectedId changes
@@ -58,6 +75,7 @@ export default function Sidebar(): React.JSX.Element {
     if (idx >= 0) {
       virtualizer.scrollToIndex(idx, { behavior: 'smooth', align: 'center' });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- scrollToIndex is stable, groupedItems changes on every filter
   }, [selectedId]);
 
   const flyTo = (c: AnimalEntry) => {
@@ -66,36 +84,50 @@ export default function Sidebar(): React.JSX.Element {
   };
 
   return (
-    <aside className="hidden md:flex w-80 shrink-0 flex-col gap-4 p-4 bg-white border-r border-zinc-200 z-10 overflow-hidden">
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+    <aside className="hidden md:flex w-80 shrink-0 flex-col gap-3 p-4 border-r border-border z-10 overflow-hidden" style={{ background: 'var(--sidebar)' }}>
+      {/* Search */}
+      <div className="relative group">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
         <input
           type="text"
           placeholder={tr.search}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-9 pr-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-300 focus:bg-white transition-colors duration-150"
+          className="w-full rounded-xl border border-border bg-accent/50 py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/40 focus:bg-card focus:ring-2 focus:ring-primary/10 transition-all duration-200"
         />
       </div>
 
+      {/* Region pills */}
       <div className="flex flex-wrap gap-1.5">
-        {["All", ...continents].map((c) => (
-          <button
-            key={c}
-            onClick={() => setActiveRegion(c)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 ${
-              activeRegion === c
-                ? "bg-zinc-900 text-white"
-                : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700"
-            }`}
-          >
-            {tr.regions[c as keyof typeof tr.regions] ?? c}
-          </button>
-        ))}
+        {["All", ...continents].map((c) => {
+          const isActive = activeRegion === c;
+          return (
+            <button
+              key={c}
+              onClick={() => setActiveRegion(c)}
+              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 ${
+                isActive
+                  ? "region-pill-active"
+                  : "bg-accent text-muted-foreground hover:bg-accent/80 hover:text-foreground"
+              }`}
+            >
+              <span className="text-xs">{CONTINENT_EMOJI[c] ?? "🌐"}</span>
+              {tr.regions[c as keyof typeof tr.regions] ?? c}
+            </button>
+          );
+        })}
       </div>
 
-      <div ref={parentRef} className="flex flex-1 flex-col gap-0.5 overflow-y-auto pr-1 scrollbar-thin">
-        {virtualizer.getVirtualItems().length === 0 && <AnimalListSkeleton />}
+      {/* Counter */}
+      <div className="flex items-center justify-between px-1">
+        <span className="text-[11px] text-muted-foreground font-medium">
+          {filtered.length} species
+        </span>
+      </div>
+
+      {/* Virtualized list */}
+      <div ref={parentRef} className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
+        {(!mounted || virtualizer.getVirtualItems().length === 0) && <AnimalListSkeleton />}
         <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const item = groupedItems[virtualItem.index];
@@ -103,13 +135,17 @@ export default function Sidebar(): React.JSX.Element {
               return (
                 <div
                   key={item.id}
-                  className="absolute left-0 right-0 flex items-center px-3 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider bg-white z-10"
+                  className="absolute left-0 right-0 flex items-center gap-2 px-3 text-[10px] font-bold uppercase tracking-widest z-10"
                   style={{
                     height: `${virtualItem.size}px`,
                     top: `${virtualItem.start}px`,
+                    color: 'var(--natura-emerald)',
+                    background: 'var(--sidebar)',
                   }}
                 >
+                  <span className="w-4 h-px" style={{ background: 'var(--natura-sage)' }} />
                   {item.classification}
+                  <span className="flex-1 h-px" style={{ background: 'var(--natura-sage)', opacity: 0.4 }} />
                 </div>
               );
             }
@@ -130,27 +166,62 @@ export default function Sidebar(): React.JSX.Element {
                   audioService.playHoverSound();
                 }}
                 onMouseLeave={() => setSidebarHoveredId(null)}
-                className={`sidebar-item absolute left-0 right-0 flex items-center gap-2 rounded-lg px-3 text-left text-sm ${
+                className={`sidebar-item absolute left-0 right-0 flex items-center gap-2.5 rounded-xl px-3 text-left text-sm ${
                   isSelected
-                    ? "bg-blue-50 border-l-2 border-l-blue-500"
+                    ? "bg-primary/8 ring-1 ring-primary/20"
                     : isHovered
-                    ? "bg-zinc-50"
+                    ? "bg-accent/60"
                     : ""
                 }`}
                 style={{
                   height: `${virtualItem.size}px`,
                   top: `${virtualItem.start}px`,
-                  ...(isSelected ? {} : { borderLeft: `2px solid ${color}40` }),
+                  borderLeft: isSelected
+                    ? `3px solid var(--natura-emerald)`
+                    : `3px solid ${color}30`,
                 }}
               >
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: iucnBg }} />
+                {/* IUCN dot */}
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{
+                    background: iucnBg,
+                    boxShadow: `0 0 0 2px ${iucnBg}30`,
+                  }}
+                />
                 <span className="sr-only">{c.conservationStatus}</span>
-                <span className="text-base">{c.emoji}</span>
+
+                {/* Emoji */}
+                <span className="text-lg">{c.emoji}</span>
+
+                {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <span className="block truncate text-zinc-800">{c.country}</span>
-                  <span className="block text-xs text-zinc-400 truncate">{c.animal}</span>
+                  <span className="block truncate font-medium text-foreground text-[13px] leading-tight">{c.animal}</span>
+                  <span className="block text-[11px] text-muted-foreground truncate">
+                    {c.flag} {c.country}
+                  </span>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">{c.region}</span>
+
+                {/* Region badge */}
+                <span
+                  className="text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0"
+                  style={{
+                    background: `${color}15`,
+                    color: color,
+                  }}
+                >
+                  {c.region}
+                </span>
+
+                {/* Detail link indicator */}
+                <Link
+                  href={`/animal/${c.slug}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 text-muted-foreground/40 hover:text-primary transition-colors text-xs"
+                  title="View details"
+                >
+                  →
+                </Link>
               </button>
             );
           })}
