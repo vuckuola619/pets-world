@@ -5,6 +5,18 @@ All notable changes to the World Wildlife Atlas are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] — 2026-04-19
+
+### 🩹 Hotfix & Image Fetch Update
+
+#### Added
+- **Wikipedia Thumbnail Integration** — Directly fetching and displaying real Wikipedia animal photos in the hero banner of the Animal Detail page, replacing emoji-only fallbacks.
+- **Dynamic Map Theme** — The map style now automatically switches to "Minimal" (satellite) when standard Dark Mode is activated, satisfying visual aesthetic expectations natively.
+
+#### Fixed
+- **Page Scrolling** — Corrected a global `overflow-hidden` constraint that previously disabled scrolling on the detailed animal pages.
+- **Wikipedia API 403 Forbidden Error** — Added correct `User-Agent` string with version pinning to API requests to ensure reliable image fetches.
+
 ## [1.1.0] — 2026-04-18
 
 ### 🎉 Hardened & Feature-Complete Release

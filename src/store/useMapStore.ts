@@ -82,8 +82,13 @@ export const useMapStore = create<MapStore>((set) => ({
   toggleMobileOpen: () => set((s) => ({ mobileOpen: !s.mobileOpen })),
   setLocale: (l) => set({ locale: l }),
   setTheme: (t) => {
-    if (typeof window !== 'undefined') localStorage.setItem('wildlife-theme', t)
-    set({ theme: t })
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wildlife-theme', t)
+      const isDark = t === 'dark' || (t === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)')?.matches)
+      set({ theme: t, mapStyle: isDark ? 'satellite' : 'voyager' })
+    } else {
+      set({ theme: t })
+    }
   },
   addCompare: (id) =>
     set((s) => {

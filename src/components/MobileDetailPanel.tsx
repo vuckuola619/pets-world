@@ -21,7 +21,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
   const { selectedId, setSelectedId, locale, compareIds, addCompare, removeCompare } = useMapStore();
   const tr = t(locale);
   const selected = selectedId ? countries.find((c) => c.id === selectedId) ?? null : null;
-  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null);
+  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl);
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);

@@ -76,8 +76,8 @@ Full-page species profile with hero banner, stat cards, taxonomy tree, fun facts
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/world-wildlife-atlas.git
-cd world-wildlife-atlas
+git clone https://github.com/vuckuola619/pets-world.git
+cd pets-world
 
 # Install dependencies
 npm install

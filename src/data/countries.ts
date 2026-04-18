@@ -21,11 +21,12 @@ export const animalSchema = z.object({
   funFacts: z.array(z.string()),
   habitat: z.string(),
   population: z.string(),
+  wikiUrl: z.string().optional(),
 })
 
 /** Parsed animal entries from raw JSON data */
 export const countries = rawData.map(a => {
-  const parsed = { ...a, lat: a.coordinates[0]?.lat ?? 0, lng: a.coordinates[0]?.lng ?? 0, animal: a.commonName, habitat: a.habitatOld || a.habitat?.join(', ') || '' }
+  const parsed = { ...a, lat: a.coordinates[0]?.lat ?? 0, lng: a.coordinates[0]?.lng ?? 0, animal: a.commonName, habitat: a.habitatOld || a.habitat?.join(', ') || '', wikiUrl: a.wikiUrl }
   return animalSchema.parse(parsed)
 })
 

@@ -99,7 +99,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const filtered = useFilteredAnimals();
   const selected = selectedId ? countries.find((c) => c.id === selectedId) ?? null : null;
   const hovered = hoveredId ? countries.find((c) => c.id === hoveredId) ?? null : null;
-  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null);
+  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl);
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);

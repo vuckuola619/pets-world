@@ -5,6 +5,7 @@ import { X, GitCompareArrows } from "lucide-react";
 import { countries } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
+import { useAnimalMedia } from "../hooks/useAnimalMedia";
 
 /** Extracts a numeric value from a population string for comparison */
 function parsePopulation(pop: string): number | null {
@@ -41,6 +42,32 @@ function CompareBar({ label, values, unit, format }: {
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function CompareAnimalHeader({ animal }: { animal: any }): React.JSX.Element {
+  const { imageUrl, imageLoading } = useAnimalMedia(animal.animal, animal.wikiUrl);
+  const [hasError, setHasError] = React.useState(false);
+  const code = STATUS_CODE[animal.conservationStatus as keyof typeof STATUS_CODE] || 'LC';
+  const iucn = IUCN_CONFIG[code as keyof typeof IUCN_CONFIG];
+
+  return (
+    <div className="glass-card rounded-xl p-4 text-center">
+      <div className="w-16 h-16 mx-auto mb-3 rounded-full overflow-hidden flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+        {imageLoading || (!imageUrl || hasError) ? (
+          <span className="text-4xl block">{animal.emoji}</span>
+        ) : (
+          <img src={imageUrl} alt={animal.animal} className="w-full h-full object-cover" onError={() => setHasError(true)} />
+        )}
+      </div>
+      <div className="font-semibold text-foreground text-sm font-[var(--font-heading)]">{animal.animal}</div>
+      <div className="text-[11px] text-muted-foreground italic">{animal.scientificName}</div>
+      <div className="mt-2 flex items-center justify-center gap-1.5">
+        <span className="w-2 h-2 rounded-full" style={{ background: iucn?.bg ?? '#888' }} />
+        <span className="text-[10px] font-bold" style={{ color: iucn?.bg ?? '#888' }}>{code}</span>
+      </div>
+      <div className="text-[10px] text-muted-foreground mt-1">{animal.flag} {animal.country}</div>
     </div>
   );
 }
@@ -115,22 +142,9 @@ export default function ComparePanel(): React.JSX.Element | null {
         <div className="p-6 space-y-6">
           {/* Species headers */}
           <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${animals.length}, 1fr)` }}>
-            {animals.map((a) => {
-              const code = STATUS_CODE[a!.conservationStatus] || 'LC';
-              const iucn = IUCN_CONFIG[code];
-              return (
-                <div key={a!.id} className="glass-card rounded-xl p-4 text-center">
-                  <span className="text-4xl block mb-2">{a!.emoji}</span>
-                  <div className="font-semibold text-foreground text-sm font-[var(--font-heading)]">{a!.animal}</div>
-                  <div className="text-[11px] text-muted-foreground italic">{a!.scientificName}</div>
-                  <div className="mt-2 flex items-center justify-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ background: iucn?.bg ?? '#888' }} />
-                    <span className="text-[10px] font-bold" style={{ color: iucn?.bg ?? '#888' }}>{code}</span>
-                  </div>
-                  <div className="text-[10px] text-muted-foreground mt-1">{a!.flag} {a!.country}</div>
-                </div>
-              );
-            })}
+            {animals.map((a) => (
+              <CompareAnimalHeader key={a!.id} animal={a} />
+            ))}
           </div>
 
           {/* Quick info grid */}

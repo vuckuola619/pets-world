@@ -8,9 +8,11 @@ All data is embedded in the build via `animals.json`.
 
 ## External APIs Consumed
 
-### 1. Wikipedia REST API (Runtime — Client-Side)
+### 1. Wikipedia REST API (Runtime)
 
-**Used by:** `src/hooks/useAnimalMedia.ts`
+**Used by:** 
+- `src/hooks/useAnimalMedia.ts` (Client-Side)
+- `src/app/animal/[slug]/page.tsx` (Server-Side / Build time during SSG)
 
 | Field | Value |
 |-------|-------|
@@ -40,7 +42,27 @@ GET https://en.wikipedia.org/api/rest_v1/page/summary/{animalName}
 
 ---
 
-### 2. CARTO Basemap Tiles (Runtime — Map Tiles)
+### 2. API-Ninjas Animals API (Runtime — Client-Side Optional)
+
+**Used by:** `src/hooks/useAnimalDetails.ts` -> `AnimalDetailsClient.tsx`
+
+| Field | Value |
+|-------|-------|
+| **Base URL** | `https://api.api-ninjas.com/v1` |
+| **Endpoint** | `GET /animals?name={name}` |
+| **Auth** | API Key (`x-api-key` header) via `NEXT_PUBLIC_API_NINJAS_KEY` |
+| **Rate Limit** | Dependent on API-Ninjas plan (free tier allows limited calls) |
+| **Used for** | Enrichment data (top speed, distinctive features, etc.) |
+
+**Request:**
+```
+GET https://api.api-ninjas.com/v1/animals?name={animalName}
+Header: x-api-key: {YOUR_KEY}
+```
+
+---
+
+### 3. CARTO Basemap Tiles (Runtime — Map Tiles)
 
 **Used by:** `src/components/MapView.tsx`
 

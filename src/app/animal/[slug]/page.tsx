@@ -62,8 +62,31 @@ export default async function AnimalDetailPage({ params }: Props): Promise<React
     .filter(a => a.region === animal.region && a.slug !== animal.slug)
     .slice(0, 5)
 
+  // Fetch real image from Wikipedia
+  let imageUrl = null;
+  try {
+    // Extract exact Wikipedia title from wikiUrl (e.g. African_wildcat)
+    const wikiTitle = animal.wikiUrl?.split('/').pop() || encodeURIComponent(animal.commonName);
+    
+    // Wikipedia REST API requires a User-Agent
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${wikiTitle}`, {
+      headers: {
+        'User-Agent': 'WorldWildlifeAtlas/1.1 (https://github.com/vuckuola619/pets-world)'
+      }
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (data.thumbnail?.source) {
+        imageUrl = data.thumbnail.source;
+      }
+    }
+  } catch (err) {
+    // Silently ignore fetch errors
+  }
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--natura-surface)' }}>
+    <div className="h-screen overflow-y-auto overflow-x-hidden" style={{ background: 'var(--natura-surface)' }}>
       {/* Sticky back button on mobile */}
       <div className="sticky top-0 z-20 md:hidden glass-header px-4 py-3">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -88,10 +111,19 @@ export default async function AnimalDetailPage({ params }: Props): Promise<React
             Back to Atlas
           </Link>
 
-          <div className="flex items-start gap-4 mb-4">
-            <span className="text-6xl sm:text-7xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>{animal.emoji}</span>
+          <div className="flex flex-col md:flex-row md:items-end gap-6 mb-4">
+            {imageUrl ? (
+              <div className="relative w-32 h-32 sm:w-40 sm:h-40 shrink-0 rounded-2xl overflow-hidden border-4 border-white/10 shadow-2xl animate-fade-in-up">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl} alt={animal.commonName} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-2xl" />
+                <div className="absolute bottom-2 right-2 text-3xl drop-shadow-md">{animal.emoji}</div>
+              </div>
+            ) : (
+              <span className="text-6xl sm:text-7xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>{animal.emoji}</span>
+            )}
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 animate-fade-in-up">
                 <span className="text-3xl">{animal.flag}</span>
                 <span className="text-sm text-white/50">{animal.country}</span>
               </div>
