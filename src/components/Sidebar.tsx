@@ -2,27 +2,20 @@
 import React from 'react';
 
 import { useRef, useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Heart, GitCompareArrows } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { type AnimalEntry, continents } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { useFilteredAnimals } from "../hooks/useAnimals";
+import { useFavorites } from "../hooks/useFavorites";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
-import { IUCN_CONFIG } from "../lib/iucn";
+import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import AnimalListSkeleton from "./AnimalListSkeleton";
 import Link from "next/link";
 
-const STATUS_CODE: Record<string, string> = {
-  'Critically Endangered': 'CR', 'Endangered': 'EN', 'Vulnerable': 'VU',
-  'Near Threatened': 'NT', 'Least Concern': 'LC', 'Data Deficient': 'DD',
-};
+import { CONTINENT_COLORS } from "../lib/regions";
 
-const CONTINENT_COLORS: Record<string, string> = {
-  "North America": "#f87171", "South America": "#fb923c", Europe: "#60a5fa",
-  Africa: "#fbbf24", Asia: "#f472b6", Oceania: "#34d399",
-  "Middle East": "#c084fc", Arctic: "#93c5fd", Antarctic: "#e0f2fe",
-};
 
 const CONTINENT_EMOJI: Record<string, string> = {
   "All": "🌍",
@@ -33,11 +26,22 @@ const CONTINENT_EMOJI: Record<string, string> = {
 
 /** Desktop sidebar with virtualized animal list grouped by classification */
 export default function Sidebar(): React.JSX.Element {
-  const { searchQuery, setSearchQuery, activeRegion, setActiveRegion, selectedId, sidebarHoveredId, setSidebarHoveredId, locale } = useMapStore();
+  const {
+    searchQuery, setSearchQuery, activeRegion, setActiveRegion,
+    selectedId, sidebarHoveredId, setSidebarHoveredId, locale,
+    showFavoritesOnly, setShowFavoritesOnly, compareIds, addCompare, removeCompare,
+  } = useMapStore();
   const tr = t(locale);
-  const filtered = useFilteredAnimals();
+  const allFiltered = useFilteredAnimals();
+  const { isFavorite, toggleFavorite, favorites } = useFavorites();
   const parentRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+
+  // Apply favorites filter
+  const filtered = useMemo(() => {
+    if (!showFavoritesOnly) return allFiltered;
+    return allFiltered.filter((c) => favorites.includes(c.id));
+  }, [allFiltered, showFavoritesOnly, favorites]);
 
   // Force re-measure after layout settles
   useEffect(() => {
@@ -118,11 +122,23 @@ export default function Sidebar(): React.JSX.Element {
         })}
       </div>
 
-      {/* Counter */}
+      {/* Counter + Favorites filter */}
       <div className="flex items-center justify-between px-1">
         <span className="text-[11px] text-muted-foreground font-medium">
           {filtered.length} species
         </span>
+        <button
+          onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+          className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full transition-all duration-200 ${
+            showFavoritesOnly
+              ? "bg-red-500/10 text-red-500"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          }`}
+          title={showFavoritesOnly ? "Show all" : "Show favorites only"}
+        >
+          <Heart size={11} fill={showFavoritesOnly ? "currentColor" : "none"} />
+          {favorites.length > 0 && <span>{favorites.length}</span>}
+        </button>
       </div>
 
       {/* Virtualized list */}
@@ -156,17 +172,22 @@ export default function Sidebar(): React.JSX.Element {
             const color = CONTINENT_COLORS[c.region] || "#6366f1";
             const code = STATUS_CODE[c.conservationStatus] || 'LC';
             const iucnBg = IUCN_CONFIG[code]?.bg ?? '#888';
+            const isInCompare = compareIds.includes(c.id);
+            const isFav = isFavorite(c.id);
 
             return (
-              <button
+              <div
                 key={item.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => flyTo(c)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flyTo(c); } }}
                 onMouseEnter={() => {
                   setSidebarHoveredId(c.id);
                   audioService.playHoverSound();
                 }}
                 onMouseLeave={() => setSidebarHoveredId(null)}
-                className={`sidebar-item absolute left-0 right-0 flex items-center gap-2.5 rounded-xl px-3 text-left text-sm ${
+                className={`sidebar-item absolute left-0 right-0 flex items-center gap-2 rounded-xl px-3 text-left text-sm cursor-pointer ${
                   isSelected
                     ? "bg-primary/8 ring-1 ring-primary/20"
                     : isHovered
@@ -202,16 +223,23 @@ export default function Sidebar(): React.JSX.Element {
                   </span>
                 </div>
 
-                {/* Region badge */}
-                <span
-                  className="text-[9px] px-1.5 py-0.5 rounded-full font-medium shrink-0"
-                  style={{
-                    background: `${color}15`,
-                    color: color,
-                  }}
+                {/* Favorite button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleFavorite(c.id); }}
+                  className="shrink-0 p-0.5 transition-colors"
+                  aria-label={isFav ? `Remove ${c.animal} from favorites` : `Add ${c.animal} to favorites`}
                 >
-                  {c.region}
-                </span>
+                  <Heart size={12} fill={isFav ? "#ef4444" : "none"} className={isFav ? "text-red-500" : "text-muted-foreground/30 hover:text-red-400"} />
+                </button>
+
+                {/* Compare button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); isInCompare ? removeCompare(c.id) : addCompare(c.id); }}
+                  className={`shrink-0 p-0.5 transition-colors ${isInCompare ? "text-primary" : "text-muted-foreground/30 hover:text-primary/60"}`}
+                  aria-label={isInCompare ? `Remove ${c.animal} from comparison` : `Add ${c.animal} to comparison`}
+                >
+                  <GitCompareArrows size={12} />
+                </button>
 
                 {/* Detail link indicator */}
                 <Link
@@ -222,7 +250,7 @@ export default function Sidebar(): React.JSX.Element {
                 >
                   →
                 </Link>
-              </button>
+              </div>
             );
           })}
         </div>

@@ -54,4 +54,29 @@ describe('useMapStore', () => {
     useMapStore.getState().setMapStyle('satellite')
     expect(useMapStore.getState().mapStyle).toBe('satellite')
   })
+
+  it('sets theme', () => {
+    useMapStore.getState().setTheme('dark')
+    expect(useMapStore.getState().theme).toBe('dark')
+    useMapStore.getState().setTheme('system')
+    expect(useMapStore.getState().theme).toBe('system')
+    useMapStore.getState().setTheme('light')
+    expect(useMapStore.getState().theme).toBe('light')
+  })
+
+  it('toggles showFavoritesOnly', () => {
+    expect(useMapStore.getState().showFavoritesOnly).toBe(false)
+    useMapStore.getState().setShowFavoritesOnly(true)
+    expect(useMapStore.getState().showFavoritesOnly).toBe(true)
+    useMapStore.getState().setShowFavoritesOnly(false)
+    expect(useMapStore.getState().showFavoritesOnly).toBe(false)
+  })
+
+  it('toggles AR mode', () => {
+    expect(useMapStore.getState().arOpen).toBe(false)
+    useMapStore.getState().setArOpen(true)
+    expect(useMapStore.getState().arOpen).toBe(true)
+    useMapStore.getState().setArOpen(false)
+    expect(useMapStore.getState().arOpen).toBe(false)
+  })
 })

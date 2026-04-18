@@ -2,13 +2,9 @@ import React from 'react'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import rawData from '@/data/animals.json'
-import { IUCN_CONFIG } from '@/lib/iucn'
+import { IUCN_CONFIG, STATUS_CODE } from '@/lib/iucn'
 import AnimalDetailsClient from './AnimalDetailsClient'
-
-const STATUS_CODE: Record<string, string> = {
-  'Critically Endangered': 'CR', 'Endangered': 'EN', 'Vulnerable': 'VU',
-  'Near Threatened': 'NT', 'Least Concern': 'LC', 'Data Deficient': 'DD',
-}
+import PopulationChart from '@/components/PopulationChart'
 
 type AnimalData = typeof rawData[number]
 
@@ -139,6 +135,11 @@ export default async function AnimalDetailPage({ params }: Props): Promise<React
           <StatCard icon="⏱️" label="Lifespan" value={`${animal.lifespan.min}–${animal.lifespan.max} ${animal.lifespan.unit}`} />
           <StatCard icon="⚖️" label="Weight" value={`${animal.weight.min}–${animal.weight.max} ${animal.weight.unit}`} />
         </div>
+
+        {/* Population Trend Chart */}
+        <section className="animate-fade-in-up" style={{ animationDelay: '0.12s' }}>
+          <PopulationChart slug={animal.slug} conservationStatus={animal.conservationStatus} width={320} height={80} />
+        </section>
 
         {/* Description */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.15s' }}>

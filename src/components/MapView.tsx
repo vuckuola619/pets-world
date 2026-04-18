@@ -1,7 +1,8 @@
 "use client"
 import React from 'react';
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Heart, GitCompareArrows, Volume2, Volume1 } from "lucide-react";
 import Map, { NavigationControl, Source, Layer, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
@@ -10,28 +11,58 @@ import { useMapStore, type MapStyleName } from "../store/useMapStore";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
-import { IUCN_CONFIG } from "../lib/iucn";
+import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import MapControls from "./MapControls";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
+import { useFavorites } from "../hooks/useFavorites";
 import MobileDetailPanel from "./MobileDetailPanel";
 import MapSkeleton from "./MapSkeleton";
 import Image from "next/image";
 import Link from "next/link";
-const STATUS_CODE: Record<string, string> = {
-  'Critically Endangered': 'CR', 'Endangered': 'EN', 'Vulnerable': 'VU',
-  'Near Threatened': 'NT', 'Least Concern': 'LC', 'Data Deficient': 'DD',
-};
+import { CONTINENT_COLORS } from "../lib/regions";
 
-const CONTINENT_COLORS: Record<string, string> = {
-  "North America": "#f87171", "South America": "#fb923c", Europe: "#60a5fa",
-  Africa: "#fbbf24", Asia: "#f472b6", Oceania: "#34d399",
-  "Middle East": "#c084fc", Arctic: "#93c5fd", Antarctic: "#e0f2fe",
-};
 
-const MAP_STYLES: Record<MapStyleName, string> = {
-  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  voyager: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-  satellite: "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json",
+/** Self-contained map styles using reliable OSM-based raster tiles (no CDN JSON dependency) */
+function makeRasterStyle(name: string, tiles: string[], attribution: string) {
+  return {
+    version: 8 as const,
+    name,
+    sources: {
+      basemap: {
+        type: "raster" as const,
+        tiles,
+        tileSize: 256,
+        attribution,
+      },
+    },
+    layers: [
+      {
+        id: "basemap-tiles",
+        type: "raster" as const,
+        source: "basemap",
+        minzoom: 0,
+        maxzoom: 19,
+      },
+    ],
+  };
+}
+
+/** All styles use Carto Voyager raster tiles (confirmed reliable CDN path).
+ *  Dark and Minimal modes are achieved via CSS filters on the canvas. */
+const VOYAGER_TILES = [
+  "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+  "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+  "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+];
+const VOYAGER_ATTR = "&copy; OSM contributors &copy; CARTO";
+
+const BASE_STYLE = makeRasterStyle("Carto Voyager", VOYAGER_TILES, VOYAGER_ATTR);
+
+/** CSS filter applied to the .maplibregl-canvas for each style */
+const MAP_CANVAS_FILTERS: Record<MapStyleName, string> = {
+  voyager: "none",
+  dark: "invert(1) hue-rotate(180deg) brightness(0.95) contrast(1.1)",
+  satellite: "grayscale(0.85) brightness(1.05) contrast(0.9)",
 };
 
 interface ViewState {
@@ -62,13 +93,14 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const {
     selectedId, hoveredId, sidebarHoveredId, mapStyle, locale,
-    setSelectedId, setHoveredId, setMobileOpen,
+    setSelectedId, setHoveredId, setMobileOpen, compareIds, addCompare, removeCompare,
   } = useMapStore();
   const tr = t(locale);
   const filtered = useFilteredAnimals();
   const selected = selectedId ? countries.find((c) => c.id === selectedId) ?? null : null;
   const hovered = hoveredId ? countries.find((c) => c.id === hoveredId) ?? null : null;
   const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null);
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
   const [, forceUpdate] = useState(0);
@@ -239,11 +271,18 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const onMapMouseMove = useCallback((evt: MapLayerMouseEvent) => {
     const map = mapRef.current?.getMap();
     if (!map) return;
-    const features = map.queryRenderedFeatures(evt.point, {
-      layers: ["unclustered-point", "clusters"],
-    });
+    /* Guard: only query layers that exist (avoids error during initial load) */
+    const layers = ["unclustered-point", "clusters"].filter((id) => map.getLayer(id));
+    if (!layers.length) return;
+    const features = map.queryRenderedFeatures(evt.point, { layers });
     map.getCanvas().style.cursor = features.length ? "pointer" : "";
   }, []);
+
+  /* Apply CSS filter to map canvas whenever style changes */
+  useEffect(() => {
+    const canvas = mapRef.current?.getMap()?.getCanvas();
+    if (canvas) canvas.style.filter = MAP_CANVAS_FILTERS[mapStyle];
+  }, [mapStyle]);
 
   return (
     <main className="relative flex-1">
@@ -252,9 +291,15 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         ref={mapRef}
         {...viewState}
         onMove={(evt) => { setViewState(evt.viewState); forceUpdate(n => n + 1); }}
-        onLoad={() => setIsMapLoaded(true)}
+        onLoad={() => {
+          setIsMapLoaded(true);
+          /* Apply CSS filter to canvas for dark/minimal modes */
+          const canvas = mapRef.current?.getMap()?.getCanvas();
+          if (canvas) canvas.style.filter = MAP_CANVAS_FILTERS[mapStyle];
+        }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle={MAP_STYLES[mapStyle]}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mapStyle={BASE_STYLE as any}
         onClick={onMapClick}
         onMouseMove={onMapMouseMove}
       >
@@ -393,8 +438,24 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     <div className="font-semibold text-foreground font-[var(--font-heading)]">{selected.animal}</div>
                     <div className="text-[11px] text-muted-foreground italic">{selected.scientificName}</div>
                   </div>
-                  <button onClick={playSound} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors" style={{ background: 'var(--accent)' }}>
-                    {isPlaying ? '🔊' : '🔈'}
+                  <button onClick={playSound} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors" style={{ background: 'var(--accent)' }} aria-label={isPlaying ? 'Playing animal sound' : 'Play animal sound'}>
+                    {isPlaying ? <Volume2 size={14} className="animate-pulse text-primary" /> : <Volume1 size={14} className="text-muted-foreground" />}
+                  </button>
+                  <button
+                    onClick={() => toggleFavorite(selected.id)}
+                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors"
+                    style={{ background: 'var(--accent)' }}
+                    aria-label={isFavorite(selected.id) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Heart size={14} fill={isFavorite(selected.id) ? '#ef4444' : 'none'} className={isFavorite(selected.id) ? 'text-red-500' : 'text-muted-foreground'} />
+                  </button>
+                  <button
+                    onClick={() => compareIds.includes(selected.id) ? removeCompare(selected.id) : addCompare(selected.id)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors ${compareIds.includes(selected.id) ? 'text-primary' : 'text-muted-foreground'}`}
+                    style={{ background: 'var(--accent)' }}
+                    aria-label={compareIds.includes(selected.id) ? 'Remove from comparison' : 'Add to comparison'}
+                  >
+                    <GitCompareArrows size={14} />
                   </button>
                 </div>
                 <div className="mt-2 flex items-center gap-1.5 flex-wrap">
@@ -439,17 +500,30 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
 
       <MapControls viewState={viewState} setViewState={setViewState} onResetView={resetView} />
 
-      {/* IUCN Legend */}
+      {/* IUCN Legend with full status names on hover */}
       <div className="hidden md:block absolute bottom-4 left-4 z-10">
-        <div className="glass-card rounded-xl shadow-sm px-3 py-2.5">
-          <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">IUCN Status</div>
-          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
-            {["LC", "NT", "VU", "EN", "CR", "EX"].map((code) => (
-              <div key={code} className="flex items-center gap-1.5 group">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/5 group-hover:scale-125 transition-transform duration-200" style={{ background: IUCN_CONFIG[code]?.bg ?? "#888" }} />
-                <span className="text-[10px] text-foreground/70 font-medium">{code}</span>
-              </div>
-            ))}
+        <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible" }}>
+          <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">IUCN Conservation Status</div>
+          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5" style={{ overflow: "visible" }}>
+            {["LC", "NT", "VU", "EN", "CR", "EX"].map((code) => {
+              const config = IUCN_CONFIG[code];
+              return (
+                <div key={code} className="flex items-center gap-1.5 group cursor-default relative" title={config?.label ?? code}>
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/5 group-hover:scale-125 transition-transform duration-200"
+                    style={{ background: config?.bg ?? "#888" }}
+                  />
+                  <span className="text-[10px] text-foreground/70 font-medium group-hover:text-foreground transition-colors">{code}</span>
+                  {/* Visual tooltip with full name */}
+                  <span
+                    className="absolute bottom-full left-1/2 mb-1.5 whitespace-nowrap text-[9px] font-medium bg-foreground text-background px-2 py-1 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
+                    style={{ transform: "translateX(-50%)", zIndex: 50 }}
+                  >
+                    {config?.label ?? code}
+                  </span>
+                </div>
+              );
+            })}
           </div>
           <div className="mt-1.5 text-[9px] text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
         </div>

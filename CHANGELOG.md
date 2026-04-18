@@ -5,6 +5,27 @@ All notable changes to the World Wildlife Atlas are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-04-18
+
+### 🎉 Hardened & Feature-Complete Release
+
+#### Added
+- **Dark & Minimal Modes** — Beautiful CSS-filter based map styles, removing external dependency on unstable style endpoints.
+- **Species Comparison** — Dedicated panel allowing users to compare stats (lifespan, weight, diet) side-by-side.
+- **Offline PWA Engine** — Service worker implementation capturing essential assets to allow continued usage without internet.
+- **Favorites Collection** — Users can bookmark specific animals, persisting via robust Local Storage sync.
+- **Population Trends** — Clean visual charts demonstrating historical species population dynamics.
+- **AR View Mode** — Augmented Reality interface for devices with AR capability.
+- **Animal Audio Data** — Full audio integration adding native roars and calls using the FindSounds API structure.
+
+#### Changed
+- **Stable Base Map Rendering** — Transitioned entirely to Carto Voyager raster tiles to ensure a 100% uptime map rendering experience without WebGL Context exhaustion.
+- **Extended Tooltips** — Upgraded the IUCN legend overlay with rich descriptions, accessibility attributes, and overflow layout adjustments.
+
+#### Fixed
+- **Hydration Violations** — Rewrote `<Sidebar>` internal nodes from illegal nested `<button>` to accessible `div role="button"` to fully pass strict React 19 hydration checks.
+- **Map Initialization Faults** — Shielded `queryRenderedFeatures` with a source layer lifecycle guard to avoid null invocations during rapid zooming.
+
 ## [1.0.0] — 2026-04-17
 
 ### 🎉 Initial Release

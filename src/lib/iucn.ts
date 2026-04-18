@@ -10,3 +10,13 @@ export const IUCN_CONFIG: Record<string, { label: string; color: string; bg: str
   DD: { label: 'Data Deficient', color: '#444', bg: '#888888' },
   NE: { label: 'Not Evaluated', color: '#444', bg: '#AAAAAA' },
 }
+
+/** Maps full conservation status name to IUCN abbreviation code */
+export const STATUS_CODE: Record<string, string> = {
+  'Critically Endangered': 'CR',
+  'Endangered': 'EN',
+  'Vulnerable': 'VU',
+  'Near Threatened': 'NT',
+  'Least Concern': 'LC',
+  'Data Deficient': 'DD',
+} as const;

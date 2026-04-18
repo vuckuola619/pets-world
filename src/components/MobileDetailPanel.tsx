@@ -1,37 +1,28 @@
 "use client"
 import React from 'react';
 
-import { X, Volume2 } from "lucide-react";
+import { X, Volume2, Heart, GitCompareArrows } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { countries } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
+import { useFavorites } from "../hooks/useFavorites";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
-import { IUCN_CONFIG } from "../lib/iucn";
+import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import { useState } from "react";
 
-const STATUS_CODE: Record<string, string> = { 'Critically Endangered': 'CR', 'Endangered': 'EN', 'Vulnerable': 'VU', 'Near Threatened': 'NT', 'Least Concern': 'LC', 'Data Deficient': 'DD' };
+import { CONTINENT_COLORS } from "../lib/regions";
 
-const CONTINENT_COLORS: Record<string, string> = {
-  "North America": "#f87171",
-  "South America": "#fb923c",
-  Europe: "#60a5fa",
-  Africa: "#fbbf24",
-  Asia: "#f472b6",
-  Oceania: "#34d399",
-  "Middle East": "#c084fc",
-  Arctic: "#93c5fd",
-  Antarctic: "#e0f2fe",
-};
 
 /** Premium mobile detail panel with glassmorphism */
 export default function MobileDetailPanel(): React.JSX.Element | null {
-  const { selectedId, setSelectedId, locale } = useMapStore();
+  const { selectedId, setSelectedId, locale, compareIds, addCompare, removeCompare } = useMapStore();
   const tr = t(locale);
   const selected = selectedId ? countries.find((c) => c.id === selectedId) ?? null : null;
   const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null);
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
 
@@ -40,6 +31,8 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
   const color = CONTINENT_COLORS[selected.region] || "#6366f1";
   const iucnCode = STATUS_CODE[selected.conservationStatus] || 'LC';
   const iucnBg = IUCN_CONFIG[iucnCode]?.bg ?? '#888';
+  const isFav = isFavorite(selected.id);
+  const isInCompare = compareIds.includes(selected.id);
 
   const playSound = () => {
     if (!selected) return;
@@ -103,10 +96,26 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
               <div className="font-semibold text-foreground font-[var(--font-heading)]">{selected.animal}</div>
               <div className="text-xs text-muted-foreground italic">{selected.scientificName}</div>
             </div>
-            {/* Sound button */}
+            {/* Action buttons */}
+            <button
+              onClick={() => toggleFavorite(selected.id)}
+              className="w-10 h-10 flex items-center justify-center rounded-full transition-colors"
+              style={{ background: 'var(--accent)' }}
+              aria-label={isFav ? tr.favorites.removeFromFavorites : tr.favorites.addToFavorites}
+            >
+              <Heart size={18} fill={isFav ? "#ef4444" : "none"} className={isFav ? "text-red-500" : "text-muted-foreground"} />
+            </button>
+            <button
+              onClick={() => isInCompare ? removeCompare(selected.id) : addCompare(selected.id)}
+              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${isInCompare ? "text-primary" : "text-muted-foreground"}`}
+              style={{ background: 'var(--accent)' }}
+              aria-label={isInCompare ? tr.compare.removeFromCompare : tr.compare.addToCompare}
+            >
+              <GitCompareArrows size={18} />
+            </button>
             <button
               onClick={playSound}
-              className="w-11 h-11 flex items-center justify-center rounded-full transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full transition-colors"
               style={{ background: 'var(--accent)' }}
             >
               {isPlaying ? (
