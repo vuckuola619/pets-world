@@ -51,6 +51,35 @@ const targets = [
   [maskable, 180, 'apple-touch-icon.png'],
 ]
 
+// Social share card: Natura gradient, globe wireframe, wordmark.
+const ogImage = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="ogbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16352a" />
+      <stop offset="0.55" stop-color="#0f2b23" />
+      <stop offset="1" stop-color="#0c2338" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#ogbg)" />
+  <g fill="none" stroke="#8fdcb2" stroke-linecap="round" opacity="0.9" transform="translate(740 90) scale(4)">
+    <circle cx="60" cy="60" r="58" stroke-width="3" />
+    <ellipse cx="60" cy="60" rx="25" ry="58" stroke-width="2.4" opacity="0.8" />
+    <path d="M2 60h116" stroke-width="2.4" opacity="0.8" />
+  </g>
+  <path d="M985 400c18 82-41 152-130 168 7-88 59-149 130-168z" fill="#f0b13e" />
+  <text x="92" y="298" font-family="Outfit, 'Segoe UI', Arial, sans-serif" font-size="84" font-weight="800" fill="#f2faf5">World Wildlife Atlas</text>
+  <text x="94" y="360" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="30" fill="#9fd6b8">186 species · Interactive globe · IUCN conservation status</text>
+  <g transform="translate(92 92)">
+    <rect width="76" height="76" rx="17" fill="#1e4a35" />
+    <g fill="none" stroke="#8fdcb2" stroke-linecap="round" transform="translate(13 13) scale(0.78)">
+      <circle cx="32" cy="32" r="27" stroke-width="4" />
+      <ellipse cx="32" cy="32" rx="12" ry="27" stroke-width="3" opacity="0.8" />
+      <path d="M5 32h54" stroke-width="3" opacity="0.8" />
+    </g>
+    <path d="M62 34c8 20-10 37-31 41 2-21 14-36 31-41z" fill="#f0b13e" />
+  </g>
+</svg>`
+
 await mkdir(publicDir, { recursive: true })
 await writeFile(resolve(root, 'src/app/icon.svg'), rounded + '\n')
 
@@ -59,3 +88,6 @@ for (const [svg, size, name] of targets) {
   await sharp(Buffer.from(svg)).resize(size, size).png().toFile(out)
   console.log(`wrote public/${name} (${size}x${size})`)
 }
+
+await sharp(Buffer.from(ogImage)).png().toFile(resolve(publicDir, 'og-image.png'))
+console.log('wrote public/og-image.png (1200x630)')

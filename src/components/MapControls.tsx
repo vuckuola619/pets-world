@@ -6,9 +6,9 @@ import { Plus, Minus, RotateCcw, Layers } from "lucide-react";
 import { useMapStore, type MapStyleName } from "../store/useMapStore";
 
 const mapStyleLabels: Record<MapStyleName, string> = {
-  voyager: "🗺️ Color",
-  dark: "🌙 Dark",
-  satellite: "✦ Minimal",
+  voyager: "Color",
+  dark: "Dark",
+  satellite: "Minimal",
 };
 
 interface MapControlsProps {

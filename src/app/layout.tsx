@@ -33,6 +33,21 @@ export const metadata: Metadata = {
     description:
       "Interactive map exploring 186+ species with conservation data, habitats, and taxonomy.",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "World Wildlife Atlas — interactive globe explorer",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "World Wildlife Atlas",
+    description:
+      "Interactive map exploring 186+ species with conservation data, habitats, and taxonomy.",
+    images: ["/og-image.png"],
   },
 };
 

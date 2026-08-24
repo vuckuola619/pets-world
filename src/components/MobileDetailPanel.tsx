@@ -1,7 +1,7 @@
 "use client"
 import React from 'react';
 
-import { X, Volume2, Heart, GitCompareArrows } from "lucide-react";
+import { X, Volume2, Heart, GitCompareArrows, BookOpen } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { type AnimalEntry } from "../data/countries";
@@ -194,7 +194,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
               rel="noopener noreferrer"
               className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
             >
-              📖 Wikipedia Reference
+              <BookOpen size={12} aria-hidden /> Wikipedia Reference
             </a>
           )}
 
