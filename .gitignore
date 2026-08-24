@@ -44,3 +44,4 @@ next-env.d.ts
 .impeccable/
 graphify-out/
 scripts/.dino-image-cache.json
+scripts/.earth-cache.jpg

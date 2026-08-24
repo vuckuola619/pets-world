@@ -1,5 +1,5 @@
-const CACHE_NAME = 'wildlife-atlas-v2';
-const STATIC_CACHE = 'wildlife-static-v2';
+const CACHE_NAME = 'wildlife-atlas-v3';
+const STATIC_CACHE = 'wildlife-static-v3';
 
 // Critical assets to precache
 const PRECACHE_URLS = [

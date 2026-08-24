@@ -10,6 +10,7 @@ import { type AnimalEntry } from "../data/countries";
 import { useMapStore, type MapStyleName } from "../store/useMapStore";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { getAtlasRecords } from "../hooks/useAtlasAnimals";
+import { wikiThumbUrl } from "../lib/wikiImages";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
@@ -321,8 +322,13 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
           <Layer {...unclusteredPointLayer} />
         </Source>
 
-        {/* Emoji markers for individual animals (on top of clusters) */}
-        {filtered.map((c) => (
+        {/* Markers: paleo-art thumbnails in prehistoric mode, emoji otherwise */}
+        {filtered.map((c) => {
+          const photoUrl =
+            isPrehistoric && c.imageKind === "photo" && c.imageUrl
+              ? wikiThumbUrl(c.imageUrl, 96)
+              : null
+          return (
           <Marker key={c.id} longitude={c.lng} latitude={c.lat} anchor="center">
             <button
               onClick={() => onMarkerClick(c)}
@@ -330,14 +336,19 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
               onMouseLeave={() => setHoveredId(null)}
               className={`pet-marker text-2xl md:text-3xl ${
                 sidebarHoveredId === c.id ? "pet-marker-highlighted" : ""
-              } ${selectedId === c.id ? "!scale-150" : ""}`}
+              } ${selectedId === c.id ? "!scale-150" : ""} ${photoUrl ? "dino-photo-marker" : ""}`}
               data-continent={c.region}
               aria-label={`View ${c.animal}, ${c.conservationStatus}`}
             >
-              {c.emoji}
+              {photoUrl ? (
+                <img src={photoUrl} alt="" loading="lazy" className="dino-photo-marker-img" />
+              ) : (
+                c.emoji
+              )}
             </button>
           </Marker>
-        ))}
+          )
+        })}
 
         {hovered && !selected && (() => {
           const pos = projectToScreen(hovered.lng, hovered.lat);
