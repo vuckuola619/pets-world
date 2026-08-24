@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 /** Schema for legacy animal entry used by map components */
+const conservationStatusEnum = z.enum(['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Data Deficient', 'Extinct'])
 export const animalSchema = z.object({
   id: z.string(),
   country: z.string(),
@@ -12,7 +13,7 @@ export const animalSchema = z.object({
   scientificName: z.string(),
   emoji: z.string(),
   classification: z.string(),
-  conservationStatus: z.enum(['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Data Deficient']),
+  conservationStatus: conservationStatusEnum,
   indigenous: z.boolean(),
   funFacts: z.array(z.string()),
   habitat: z.string(),
@@ -21,3 +22,6 @@ export const animalSchema = z.object({
 
 /** Legacy animal entry type */
 export type Animal = z.infer<typeof animalSchema>
+
+/** Legacy conservation status type */
+export type ConservationStatus = z.infer<typeof conservationStatusEnum>

@@ -9,8 +9,11 @@ describe('useMapStore', () => {
       sidebarHoveredId: null,
       searchQuery: '',
       activeRegion: 'All',
+      atlasMode: 'wildlife',
       mapStyle: 'voyager',
       mobileOpen: false,
+      compareIds: [],
+      compareOpen: false,
     })
   })
 
@@ -38,6 +41,29 @@ describe('useMapStore', () => {
   it('sets active region', () => {
     useMapStore.getState().setActiveRegion('Asia')
     expect(useMapStore.getState().activeRegion).toBe('Asia')
+  })
+
+  it('defaults to wildlife atlas mode', () => {
+    expect(useMapStore.getState().atlasMode).toBe('wildlife')
+  })
+
+  it('switches atlas mode and clears stale map state', () => {
+    useMapStore.getState().setSelectedId('id')
+    useMapStore.getState().setHoveredId('cn')
+    useMapStore.getState().setSidebarHoveredId('cn')
+    useMapStore.getState().setActiveRegion('Asia')
+    useMapStore.getState().addCompare('id')
+    useMapStore.getState().setCompareOpen(true)
+
+    useMapStore.getState().setAtlasMode('prehistoric')
+
+    expect(useMapStore.getState().atlasMode).toBe('prehistoric')
+    expect(useMapStore.getState().selectedId).toBeNull()
+    expect(useMapStore.getState().hoveredId).toBeNull()
+    expect(useMapStore.getState().sidebarHoveredId).toBeNull()
+    expect(useMapStore.getState().activeRegion).toBe('All')
+    expect(useMapStore.getState().compareIds).toEqual([])
+    expect(useMapStore.getState().compareOpen).toBe(false)
   })
 
   it('toggles mobile open', () => {

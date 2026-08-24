@@ -1,22 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+
+interface AnimalMediaState {
+  name: string | null;
+  imageUrl: string | null;
+}
 
 /** Fetches Wikipedia thumbnail image for an animal */
-export function useAnimalMedia(animalName: string | null, wikiUrl?: string): { imageUrl: string | null; imageLoading: boolean } {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageLoading, setImageLoading] = useState(false);
-  const prevName = useRef(animalName);
-
-  // Reset state synchronously when animalName changes (before effect runs)
-  if (prevName.current !== animalName) {
-    prevName.current = animalName;
-    setImageUrl(null);
-    setImageLoading(!!animalName);
-  }
+export function useAnimalMedia(
+  animalName: string | null,
+  wikiUrl?: string,
+  preferredImageUrl?: string | null
+): { imageUrl: string | null; imageLoading: boolean } {
+  const [state, setState] = useState<AnimalMediaState>({ name: null, imageUrl: null });
 
   useEffect(() => {
-    if (!animalName) return;
+    if (!animalName || preferredImageUrl) return;
 
     let cancelled = false;
 
@@ -33,17 +33,19 @@ export function useAnimalMedia(animalName: string | null, wikiUrl?: string): { i
         return res.json();
       })
       .then((data) => {
-        if (!cancelled && data.thumbnail?.source) setImageUrl(data.thumbnail.source);
+        if (!cancelled) setState({ name: animalName, imageUrl: data.thumbnail?.source ?? null });
       })
       .catch((err) => {
         console.error("Wikipedia fetch failed:", err);
-      })
-      .finally(() => {
-        if (!cancelled) setImageLoading(false);
+        if (!cancelled) setState({ name: animalName, imageUrl: null });
       });
 
     return () => { cancelled = true; };
-  }, [animalName, wikiUrl]);
+  }, [animalName, wikiUrl, preferredImageUrl]);
 
-  return { imageUrl, imageLoading };
+  if (!animalName) return { imageUrl: null, imageLoading: false };
+  if (preferredImageUrl) return { imageUrl: preferredImageUrl, imageLoading: false };
+  if (state.name !== animalName) return { imageUrl: null, imageLoading: true };
+
+  return { imageUrl: state.imageUrl, imageLoading: false };
 }

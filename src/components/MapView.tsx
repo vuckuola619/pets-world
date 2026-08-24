@@ -3,24 +3,25 @@ import React from 'react';
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Heart, GitCompareArrows, Volume2, Volume1 } from "lucide-react";
-import Map, { NavigationControl, Source, Layer, Marker } from "react-map-gl/maplibre";
+import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
-import { countries, type AnimalEntry } from "../data/countries";
+import { type AnimalEntry } from "../data/countries";
 import { useMapStore, type MapStyleName } from "../store/useMapStore";
 import { useFilteredAnimals } from "../hooks/useAnimals";
+import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import MapControls from "./MapControls";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
+import { getAtlasProfileBySlug, translateCountry, getProfileFunFacts } from "../data/atlasProfiles";
 import { useFavorites } from "../hooks/useFavorites";
 import MobileDetailPanel from "./MobileDetailPanel";
 import MapSkeleton from "./MapSkeleton";
 import Image from "next/image";
 import Link from "next/link";
 import { CONTINENT_COLORS } from "../lib/regions";
-
 
 /** Self-contained map styles using reliable OSM-based raster tiles (no CDN JSON dependency) */
 function makeRasterStyle(name: string, tiles: string[], attribution: string) {
@@ -92,14 +93,18 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const mapRef = useRef<MapRef>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const {
-    selectedId, hoveredId, sidebarHoveredId, mapStyle, locale,
+    selectedId, hoveredId, sidebarHoveredId, mapStyle, locale, atlasMode,
     setSelectedId, setHoveredId, setMobileOpen, compareIds, addCompare, removeCompare,
   } = useMapStore();
+  const isPrehistoric = atlasMode === "prehistoric";
+  const atlasRecords = getAtlasRecords(atlasMode);
   const tr = t(locale);
   const filtered = useFilteredAnimals();
-  const selected = selectedId ? countries.find((c) => c.id === selectedId) ?? null : null;
-  const hovered = hoveredId ? countries.find((c) => c.id === hoveredId) ?? null : null;
-  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl);
+  const selected = selectedId ? atlasRecords.find((c) => c.id === selectedId) ?? null : null;
+  const hovered = hoveredId ? atlasRecords.find((c) => c.id === hoveredId) ?? null : null;
+  const selectedProfile = selected ? getAtlasProfileBySlug(selected.slug) ?? null : null;
+  const hoveredProfile = hovered ? getAtlasProfileBySlug(hovered.slug) ?? null : null;
+  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl, selected?.imageUrl);
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
@@ -236,7 +241,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
       if (id) {
         audioService.playClickSound();
         setSelectedId(id);
-        const c = countries.find((x) => x.id === id);
+        const c = atlasRecords.find((x) => x.id === id);
         if (c) {
           setViewState((v) => ({
             ...v,
@@ -265,7 +270,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         }
       });
     }
-  }, [setSelectedId, setViewState]);
+  }, [setSelectedId, setViewState, atlasRecords]);
 
   // Cursor on hover
   const onMapMouseMove = useCallback((evt: MapLayerMouseEvent) => {
@@ -303,8 +308,6 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         onClick={onMapClick}
         onMouseMove={onMapMouseMove}
       >
-        <NavigationControl position="bottom-right" />
-
         <Source
           id="animals"
           type="geojson"
@@ -354,14 +357,14 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
               <div className="glass-card rounded-xl p-3 min-w-[180px] shadow-lg">
                 <div className="font-semibold text-sm flex items-center gap-2 text-foreground">
                   <span>{hovered.flag}</span>
-                  <span>{hovered.country}</span>
+                  <span>{hoveredProfile ? translateCountry(hoveredProfile.country, locale) : hovered.country}</span>
                 </div>
                 <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
                   <span className="text-lg">{hovered.emoji}</span>
                   <span className="font-medium text-foreground">{hovered.animal}</span>
                 </div>
                 <div className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
-                  {hovered.funFacts[0]}
+                  {hoveredProfile ? getProfileFunFacts(hoveredProfile, locale)[0] : hovered.funFacts[0]}
                 </div>
                 <div
                   className="mt-2 text-[10px] px-2 py-0.5 rounded-full inline-block font-medium"
@@ -430,7 +433,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                 </div>
                 <div className="text-sm font-semibold flex items-center gap-2 text-foreground">
                   <span>{selected.flag}</span>
-                  <span>{selected.country}</span>
+                  <span>{selectedProfile ? translateCountry(selectedProfile.country, locale) : selected.country}</span>
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="text-2xl">{selected.emoji}</span>
@@ -472,17 +475,32 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     {STATUS_CODE[selected.conservationStatus] || 'LC'} · {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
                   </div>
                   <div className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${CONTINENT_COLORS[selected.region]}15`, color: CONTINENT_COLORS[selected.region] }}>
-                    {selected.region}
+                    {tr.regions[selected.region as keyof typeof tr.regions] ?? selected.region}
                   </div>
                 </div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
-                  {selected.funFacts.slice(0, 3).map((f, i) => (
+                  {selectedProfile ? getProfileFunFacts(selectedProfile, locale).slice(0, 3).map((f, i) => (
+                    <li key={i} className="flex gap-1.5">
+                      <span className="shrink-0 text-xs font-bold" style={{ color: CONTINENT_COLORS[selected.region] }}>{i + 1}.</span>
+                      <span>{f}</span>
+                    </li>
+                  )) : selected.funFacts.slice(0, 3).map((f, i) => (
                     <li key={i} className="flex gap-1.5">
                       <span className="shrink-0 text-xs font-bold" style={{ color: CONTINENT_COLORS[selected.region] }}>{i + 1}.</span>
                       <span>{f}</span>
                     </li>
                   ))}
                 </ul>
+                {selected.wikiUrl && (
+                  <a
+                    href={selected.wikiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                  >
+                    📖 Wikipedia Reference
+                  </a>
+                )}
                 <Link
                   href={`/animal/${selected.slug}`}
                   className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-primary-foreground transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-95"
@@ -503,7 +521,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
       {/* IUCN Legend with full status names on hover */}
       <div className="hidden md:block absolute bottom-4 left-4 z-10">
         <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible" }}>
-          <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">IUCN Conservation Status</div>
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">IUCN Conservation Status</div>
           <div className="grid grid-cols-3 gap-x-3 gap-y-1.5" style={{ overflow: "visible" }}>
             {["LC", "NT", "VU", "EN", "CR", "EX"].map((code) => {
               const config = IUCN_CONFIG[code];
@@ -513,7 +531,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/5 group-hover:scale-125 transition-transform duration-200"
                     style={{ background: config?.bg ?? "#888" }}
                   />
-                  <span className="text-[10px] text-foreground/70 font-medium group-hover:text-foreground transition-colors">{code}</span>
+                  <span className="text-[10px] text-foreground/80 font-medium group-hover:text-foreground transition-colors">{code}</span>
                   {/* Visual tooltip with full name */}
                   <span
                     className="absolute bottom-full left-1/2 mb-1.5 whitespace-nowrap text-[9px] font-medium bg-foreground text-background px-2 py-1 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
@@ -525,7 +543,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
               );
             })}
           </div>
-          <div className="mt-1.5 text-[9px] text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
+          <div className="mt-1.5 text-[10px] text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
         </div>
       </div>
     </main>

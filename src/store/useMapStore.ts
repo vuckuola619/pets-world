@@ -4,6 +4,9 @@ import type { Locale } from '../lib/i18n'
 /** Supported map tile style names */
 type MapStyleName = 'voyager' | 'dark' | 'satellite'
 
+/** Active atlas data mode */
+type AtlasMode = 'wildlife' | 'prehistoric'
+
 /** Theme preference */
 type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -22,6 +25,7 @@ interface MapStore {
   mobileOpen: boolean
   locale: Locale
   theme: ThemeMode
+  atlasMode: AtlasMode
   compareIds: string[]
   compareOpen: boolean
   showFavoritesOnly: boolean
@@ -37,6 +41,7 @@ interface MapStore {
   toggleMobileOpen: () => void
   setLocale: (l: Locale) => void
   setTheme: (t: ThemeMode) => void
+  setAtlasMode: (m: AtlasMode) => void
   addCompare: (id: string) => void
   removeCompare: (id: string) => void
   clearCompare: () => void
@@ -45,7 +50,7 @@ interface MapStore {
   setArOpen: (open: boolean) => void
 }
 
-export type { MapStyleName, ThemeMode }
+export type { AtlasMode, MapStyleName, ThemeMode }
 
 /** Reads saved theme from localStorage (safe for SSR) */
 function getSavedTheme(): ThemeMode {
@@ -67,6 +72,7 @@ export const useMapStore = create<MapStore>((set) => ({
   mobileOpen: false,
   locale: 'en' as Locale,
   theme: getSavedTheme(),
+  atlasMode: 'wildlife',
   compareIds: [],
   compareOpen: false,
   showFavoritesOnly: false,
@@ -90,6 +96,18 @@ export const useMapStore = create<MapStore>((set) => ({
       set({ theme: t })
     }
   },
+  setAtlasMode: (mode) =>
+    set({
+      atlasMode: mode,
+      selectedId: null,
+      hoveredId: null,
+      sidebarHoveredId: null,
+      searchQuery: '',
+      activeRegion: 'All',
+      mobileOpen: false,
+      compareIds: [],
+      compareOpen: false,
+    }),
   addCompare: (id) =>
     set((s) => {
       if (s.compareIds.includes(id) || s.compareIds.length >= MAX_COMPARE) return s

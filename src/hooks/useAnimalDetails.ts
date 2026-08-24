@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { fetchAnimalDetails, type ApiNinjasAnimal } from "../lib/apiNinjas";
 
 interface AnimalDetailsState {
@@ -9,23 +9,22 @@ interface AnimalDetailsState {
   error: boolean;
 }
 
+interface AnimalDetailsCache {
+  name: string | null;
+  details: ApiNinjasAnimal | null;
+  error: boolean;
+}
+
 /**
  * Hook to fetch enriched animal details from API-Ninjas.
  * Includes session caching and graceful fallback.
  */
 export function useAnimalDetails(animalName: string | null): AnimalDetailsState {
-  const [details, setDetails] = useState<ApiNinjasAnimal | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const prevName = useRef(animalName);
-
-  // Reset state synchronously when animalName changes
-  if (prevName.current !== animalName) {
-    prevName.current = animalName;
-    setDetails(null);
-    setLoading(!!animalName);
-    setError(false);
-  }
+  const [state, setState] = useState<AnimalDetailsCache>({
+    name: null,
+    details: null,
+    error: false,
+  });
 
   useEffect(() => {
     if (!animalName) return;
@@ -35,19 +34,18 @@ export function useAnimalDetails(animalName: string | null): AnimalDetailsState 
     fetchAnimalDetails(animalName)
       .then((data) => {
         if (!cancelled) {
-          setDetails(data);
-          setError(!data);
+          setState({ name: animalName, details: data, error: !data });
         }
       })
       .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setState({ name: animalName, details: null, error: true });
       });
 
     return () => { cancelled = true; };
   }, [animalName]);
 
-  return { details, loading, error };
+  if (!animalName) return { details: null, loading: false, error: false };
+  if (state.name !== animalName) return { details: null, loading: true, error: false };
+
+  return { details: state.details, loading: false, error: state.error };
 }

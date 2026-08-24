@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useMapStore } from '../store/useMapStore'
 
 /** Applies the current theme class and meta color to the document */
@@ -21,33 +21,40 @@ function applyTheme(theme: 'light' | 'dark' | 'system'): void {
 
 /** Theme management hook with localStorage persistence and system preference detection */
 export function useTheme() {
-  const theme = useMapStore((s) => s.theme)
+  const themeState = useMapStore((s) => s.theme)
   const setTheme = useMapStore((s) => s.setTheme)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Apply theme on mount and changes
   useEffect(() => {
-    applyTheme(theme)
-  }, [theme])
+    applyTheme(themeState)
+  }, [themeState])
 
   // Listen for system preference changes when in "system" mode
   useEffect(() => {
-    if (theme !== 'system') return
+    if (themeState !== 'system') return
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const handler = () => applyTheme('system')
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [theme])
+  }, [themeState])
 
   const toggleTheme = useCallback(() => {
-    const next = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'
+    const next = themeState === 'light' ? 'dark' : themeState === 'dark' ? 'system' : 'light'
     setTheme(next)
-  }, [theme, setTheme])
+  }, [themeState, setTheme])
 
   const isDark =
-    typeof window !== 'undefined'
-      ? theme === 'dark' ||
-        (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    mounted && typeof window !== 'undefined'
+      ? themeState === 'dark' ||
+        (themeState === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
       : false
 
-  return { theme, setTheme, toggleTheme, isDark }
+  const theme = mounted ? themeState : 'light'
+
+  return { theme, setTheme, toggleTheme, isDark, mounted }
 }

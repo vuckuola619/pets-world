@@ -4,24 +4,33 @@ import React from 'react';
 import { X, Volume2, Heart, GitCompareArrows } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { countries } from "../data/countries";
+import { type AnimalEntry } from "../data/countries";
+import type { DinosaurAnimalEntry } from "../data/dinosaurs";
 import { useMapStore } from "../store/useMapStore";
+import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
 import { useFavorites } from "../hooks/useFavorites";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import { useState } from "react";
+import { getAtlasProfileBySlug, translateCountry, getProfileFunFacts } from "../data/atlasProfiles";
 
 import { CONTINENT_COLORS } from "../lib/regions";
 
+function getDinosaurRecord(entry: AnimalEntry | null) {
+  return entry && 'dinosaur' in entry ? (entry as DinosaurAnimalEntry).dinosaur : null;
+}
 
 /** Premium mobile detail panel with glassmorphism */
 export default function MobileDetailPanel(): React.JSX.Element | null {
-  const { selectedId, setSelectedId, locale, compareIds, addCompare, removeCompare } = useMapStore();
+  const { atlasMode, selectedId, setSelectedId, locale, compareIds, addCompare, removeCompare } = useMapStore();
   const tr = t(locale);
-  const selected = selectedId ? countries.find((c) => c.id === selectedId) ?? null : null;
-  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl);
+  const isPrehistoric = atlasMode === 'prehistoric';
+  const selected = selectedId ? getAtlasRecords(atlasMode).find((c) => c.id === selectedId) ?? null : null;
+  const selectedDinosaur = getDinosaurRecord(selected);
+  const selectedProfile = selected ? getAtlasProfileBySlug(selected.slug) ?? null : null;
+  const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl, selected?.imageUrl);
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
@@ -88,7 +97,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
           {/* Header */}
           <div className="flex items-center gap-2 text-foreground">
             <span className="text-lg">{selected.flag}</span>
-            <span className="font-semibold">{selected.country}</span>
+            <span className="font-semibold">{selectedProfile ? translateCountry(selectedProfile.country, locale) : selected.country}</span>
           </div>
           <div className="mt-1 flex items-center gap-2">
             <span className="text-2xl">{selected.emoji}</span>
@@ -113,17 +122,19 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
             >
               <GitCompareArrows size={18} />
             </button>
-            <button
-              onClick={playSound}
-              className="w-10 h-10 flex items-center justify-center rounded-full transition-colors"
-              style={{ background: 'var(--accent)' }}
-            >
-              {isPlaying ? (
-                <Volume2 size={20} className="animate-pulse" style={{ color: 'var(--natura-ocean)' }} />
-              ) : (
-                <Volume2 size={20} className="text-muted-foreground" />
-              )}
-            </button>
+            {!isPrehistoric && (
+              <button
+                onClick={playSound}
+                className="w-10 h-10 flex items-center justify-center rounded-full transition-colors"
+                style={{ background: 'var(--accent)' }}
+              >
+                {isPlaying ? (
+                  <Volume2 size={20} className="animate-pulse" style={{ color: 'var(--natura-ocean)' }} />
+                ) : (
+                  <Volume2 size={20} className="text-muted-foreground" />
+                )}
+              </button>
+            )}
           </div>
 
           {/* Badges */}
@@ -141,7 +152,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
               {iucnCode} · {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
             </div>
             <div className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ background: `${color}15`, color }}>
-              {selected.region}
+              {tr.regions[selected.region as keyof typeof tr.regions] ?? selected.region}
             </div>
           </div>
 
@@ -163,7 +174,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
 
           {/* Fun facts */}
           <ul className="mt-4 space-y-2 text-xs text-muted-foreground leading-relaxed">
-            {selected.funFacts.slice(0, 3).map((f, i) => (
+            {(selectedProfile ? getProfileFunFacts(selectedProfile, locale) : selected.funFacts).slice(0, 3).map((f, i) => (
               <li key={i} className="flex gap-2">
                 <span
                   className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
@@ -176,16 +187,44 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
             ))}
           </ul>
 
-          {/* Detail page link */}
-          <Link
-            href={`/animal/${selected.slug}`}
-            className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-primary-foreground transition-all duration-200 hover:shadow-lg active:scale-98"
-            style={{
-              background: 'linear-gradient(135deg, var(--natura-forest), var(--natura-emerald))',
-            }}
-          >
-            Explore Full Profile →
-          </Link>
+          {selected.wikiUrl && (
+            <a
+              href={selected.wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+            >
+              📖 Wikipedia Reference
+            </a>
+          )}
+
+          {selectedDinosaur && (
+            <div className="mt-4 rounded-xl border px-3 py-3 text-xs leading-relaxed" style={{ borderColor: 'rgba(146, 91, 30, 0.28)', background: 'rgba(146, 91, 30, 0.10)' }}>
+              <div className="font-bold text-foreground">PBDB fossil evidence</div>
+              <div className="mt-1 text-muted-foreground">{selectedDinosaur.evidenceNote}</div>
+              <a
+                href={selectedDinosaur.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-block text-[11px] font-semibold text-primary hover:underline"
+              >
+                Verify occurrence {selectedDinosaur.pbdbOccurrenceId}
+              </a>
+            </div>
+          )}
+
+          {(
+            <Link
+              href={`/animal/${selected.slug}`}
+              prefetch={false}
+              className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-primary-foreground transition-all duration-200 hover:shadow-lg active:scale-98"
+              style={{
+                background: 'linear-gradient(135deg, var(--natura-forest), var(--natura-emerald))',
+              }}
+            >
+              Explore Full Profile →
+            </Link>
+          )}
         </div>
       </div>
     </div>

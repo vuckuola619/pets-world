@@ -4,8 +4,9 @@ import React from 'react';
 import { useRef, useEffect, useMemo, useState } from "react";
 import { Search, Heart, GitCompareArrows } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { type AnimalEntry, continents } from "../data/countries";
+import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
+import { useAtlasData } from "../hooks/useAtlasAnimals";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { useFavorites } from "../hooks/useFavorites";
 import { audioService } from "./AudioService";
@@ -29,9 +30,10 @@ export default function Sidebar(): React.JSX.Element {
   const {
     searchQuery, setSearchQuery, activeRegion, setActiveRegion,
     selectedId, sidebarHoveredId, setSidebarHoveredId, locale,
-    showFavoritesOnly, setShowFavoritesOnly, compareIds, addCompare, removeCompare,
+    atlasMode, showFavoritesOnly, setShowFavoritesOnly, compareIds, addCompare, removeCompare,
   } = useMapStore();
   const tr = t(locale);
+  const { regions } = useAtlasData();
   const allFiltered = useFilteredAnimals();
   const { isFavorite, toggleFavorite, favorites } = useFavorites();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -103,7 +105,7 @@ export default function Sidebar(): React.JSX.Element {
 
       {/* Region pills */}
       <div className="flex flex-wrap gap-1.5">
-        {["All", ...continents].map((c) => {
+        {["All", ...regions].map((c) => {
           const isActive = activeRegion === c;
           return (
             <button
@@ -125,7 +127,7 @@ export default function Sidebar(): React.JSX.Element {
       {/* Counter + Favorites filter */}
       <div className="flex items-center justify-between px-1">
         <span className="text-[11px] text-muted-foreground font-medium">
-          {filtered.length} species
+          {filtered.length} {atlasMode === 'prehistoric' ? 'dinosaurs' : 'species'}
         </span>
         <button
           onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
@@ -234,22 +236,28 @@ export default function Sidebar(): React.JSX.Element {
 
                 {/* Compare button */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); isInCompare ? removeCompare(c.id) : addCompare(c.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isInCompare) removeCompare(c.id);
+                    else addCompare(c.id);
+                  }}
                   className={`shrink-0 p-0.5 transition-colors ${isInCompare ? "text-primary" : "text-muted-foreground/30 hover:text-primary/60"}`}
                   aria-label={isInCompare ? `Remove ${c.animal} from comparison` : `Add ${c.animal} to comparison`}
                 >
                   <GitCompareArrows size={12} />
                 </button>
 
-                {/* Detail link indicator */}
-                <Link
-                  href={`/animal/${c.slug}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="shrink-0 text-muted-foreground/40 hover:text-primary transition-colors text-xs"
-                  title="View details"
-                >
-                  →
-                </Link>
+                {(
+                  <Link
+                    href={`/animal/${c.slug}`}
+                    prefetch={false}
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 text-muted-foreground/40 hover:text-primary transition-colors text-xs"
+                    title="View details"
+                  >
+                    →
+                  </Link>
+                )}
               </div>
             );
           })}

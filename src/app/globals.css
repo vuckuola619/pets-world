@@ -60,7 +60,7 @@
   --secondary: oklch(0.96 0.01 160);
   --secondary-foreground: oklch(0.25 0.04 160);
   --muted: oklch(0.96 0.01 160);
-  --muted-foreground: oklch(0.52 0.02 160);
+  --muted-foreground: oklch(0.45 0.02 160);
   --accent: oklch(0.94 0.03 160);
   --accent-foreground: oklch(0.25 0.04 160);
   --destructive: oklch(0.577 0.245 27.325);
@@ -161,6 +161,17 @@
   .maplibregl-popup-tip {
     @apply hidden!;
   }
+  .maplibregl-ctrl-attrib {
+    border-radius: 8px;
+    background: var(--natura-glass);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .maplibregl-ctrl-attrib,
+  .maplibregl-ctrl-attrib a {
+    color: var(--muted-foreground);
+    font-size: 10px;
+  }
 }
 
 /* ─── Glassmorphism ────────────────────────── */
@@ -247,6 +258,37 @@
   transform: scale(1.5);
   z-index: 10;
   filter: drop-shadow(0 6px 12px rgba(0,0,0,0.3));
+}
+
+.prehistoric-atlas {
+  --natura-surface: oklch(0.93 0.035 82);
+  --natura-glass: rgba(252, 239, 204, 0.78);
+  --natura-glass-border: rgba(113, 76, 36, 0.22);
+  --sidebar: oklch(0.91 0.04 82);
+  --sidebar-accent: oklch(0.86 0.055 76);
+  --accent: oklch(0.88 0.05 78);
+  --primary: oklch(0.42 0.12 55);
+  --ring: oklch(0.48 0.13 55);
+}
+
+.dark .prehistoric-atlas,
+.prehistoric-atlas.dark {
+  --natura-surface: oklch(0.19 0.025 72);
+  --natura-glass: rgba(49, 38, 25, 0.78);
+  --natura-glass-border: rgba(235, 190, 111, 0.14);
+  --sidebar: oklch(0.22 0.025 72);
+  --sidebar-accent: oklch(0.28 0.035 72);
+  --accent: oklch(0.29 0.035 72);
+  --primary: oklch(0.72 0.15 73);
+  --ring: oklch(0.72 0.15 73);
+}
+
+.prehistoric-marker {
+  filter: drop-shadow(0 3px 7px rgba(68, 45, 22, 0.38));
+}
+
+.prehistoric-marker:hover {
+  filter: drop-shadow(0 6px 12px rgba(68, 45, 22, 0.5));
 }
 
 /* Continent-specific animation speeds */

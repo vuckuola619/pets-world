@@ -2,8 +2,9 @@
 import React from 'react';
 
 import { Search, Menu, X } from "lucide-react";
-import { type AnimalEntry, continents } from "../data/countries";
+import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
+import { useAtlasData } from "../hooks/useAtlasAnimals";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
@@ -14,6 +15,7 @@ import { CONTINENT_COLORS } from "../lib/regions";
 export default function MobileSidebar(): React.JSX.Element {
   const { mobileOpen, setMobileOpen, toggleMobileOpen, searchQuery, setSearchQuery, activeRegion, setActiveRegion, selectedId, sidebarHoveredId, setSidebarHoveredId, locale } = useMapStore();
   const tr = t(locale);
+  const { regions } = useAtlasData();
   const filtered = useFilteredAnimals();
 
   const flyTo = (c: AnimalEntry) => {
@@ -56,7 +58,7 @@ export default function MobileSidebar(): React.JSX.Element {
               />
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {["All", ...continents].map((c) => (
+              {["All", ...regions].map((c) => (
                 <button
                   key={c}
                   onClick={() => setActiveRegion(c)}

@@ -30,6 +30,18 @@ const translations = {
       scientificName: 'Nama Ilmiah',
       playSound: 'Putar Suara',
       stopSound: 'Hentikan Suara',
+      extendedData: 'Data Tambahan',
+      extendedProfile: 'Profil Tambahan',
+      viaApiNinjas: 'melalui API-Ninjas',
+      topSpeed: 'Kecepatan Maksimum',
+      biggestThreat: 'Ancaman Terbesar',
+      distinctiveFeature: 'Ciri Khas',
+      groupBehavior: 'Perilaku Kelompok',
+      skinType: 'Jenis Kulit',
+      prey: 'Mangsa',
+      gestationPeriod: 'Masa Kehamilan',
+      sexualMaturity: 'Kematangan Seksual',
+      colors: 'Warna',
     },
     conservation: {
       'Least Concern': 'Risiko Rendah',
@@ -80,6 +92,15 @@ const translations = {
       'Crustacean': 'Krustasea',
       'Mollusk': 'Moluska',
       'Arachnid': 'Arakhnida',
+    },
+    diets: {
+      'carnivore': 'Karnivora',
+      'herbivore': 'Herbivora',
+      'omnivore': 'Omnivora',
+      'Carnivore': 'Karnivora',
+      'Herbivore': 'Herbivora',
+      'Omnivore': 'Omnivora',
+      'Not listed in PBDB': 'Tidak tercantum di PBDB'
     },
     // New strings for features
     theme: {
@@ -160,6 +181,18 @@ const translations = {
       scientificName: 'Scientific Name',
       playSound: 'Play Sound',
       stopSound: 'Stop Sound',
+      extendedData: 'Extended Data',
+      extendedProfile: 'Extended Profile',
+      viaApiNinjas: 'via API-Ninjas',
+      topSpeed: 'Top Speed',
+      biggestThreat: 'Biggest Threat',
+      distinctiveFeature: 'Distinctive Feature',
+      groupBehavior: 'Group Behavior',
+      skinType: 'Skin Type',
+      prey: 'Prey',
+      gestationPeriod: 'Gestation Period',
+      sexualMaturity: 'Sexual Maturity',
+      colors: 'Colors',
     },
     conservation: {
       'Least Concern': 'Least Concern',
@@ -210,6 +243,15 @@ const translations = {
       'Crustacean': 'Crustacean',
       'Mollusk': 'Mollusk',
       'Arachnid': 'Arachnid',
+    },
+    diets: {
+      'carnivore': 'Carnivore',
+      'herbivore': 'Herbivore',
+      'omnivore': 'Omnivore',
+      'Carnivore': 'Carnivore',
+      'Herbivore': 'Herbivore',
+      'Omnivore': 'Omnivore',
+      'Not listed in PBDB': 'Not listed in PBDB'
     },
     // New strings for features
     theme: {
