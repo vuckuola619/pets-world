@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Heart, GitCompareArrows, Volume2, Volume1 } from "lucide-react";
+import { Heart, GitCompareArrows, Volume2, Volume1, BookOpen } from "lucide-react";
 import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
@@ -498,7 +498,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     rel="noopener noreferrer"
                     className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
                   >
-                    📖 Wikipedia Reference
+                    <BookOpen size={12} aria-hidden /> Wikipedia Reference
                   </a>
                 )}
                 <Link
