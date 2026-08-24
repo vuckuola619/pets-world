@@ -8,9 +8,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
-  turbopack: {
-    root: "..",
-  },
+
   async headers() {
     return [
       {
