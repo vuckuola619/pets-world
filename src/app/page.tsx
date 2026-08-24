@@ -2,10 +2,11 @@
 import React from 'react';
 
 import { useState, useCallback } from "react";
-import { Shuffle, Globe, Search, Leaf, Sun, Moon, Monitor, Volume2, VolumeX, Camera } from "lucide-react";
+import { Shuffle, Globe, Search, Leaf, Sun, Moon, Monitor, Volume2, VolumeX, Camera, Bone } from "lucide-react";
 import { t } from "../lib/i18n";
-import { countries, type AnimalEntry } from "../data/countries";
+import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
+import { useAtlasData } from "../hooks/useAtlasAnimals";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { useTheme } from "../hooks/useTheme";
 import { audioService } from "../components/AudioService";
@@ -30,8 +31,10 @@ function ThemeIcon({ theme }: { theme: string }): React.JSX.Element {
 export default function Home(): React.JSX.Element {
   const [viewState, setViewState] = useState(DEFAULT_VIEW);
   const filtered = useFilteredAnimals();
-  const { selectedId, setSelectedId, setMobileOpen, locale, setLocale, arOpen, setArOpen } = useMapStore();
+  const { atlasMode, setAtlasMode, setSelectedId, setMobileOpen, locale, setLocale, arOpen, setArOpen } = useMapStore();
+  const { records, regions } = useAtlasData();
   const { theme, toggleTheme } = useTheme();
+  const isPrehistoric = atlasMode === 'prehistoric';
 
   const flyTo = useCallback((c: AnimalEntry) => {
     setSelectedId(c.id);
@@ -46,9 +49,9 @@ export default function Home(): React.JSX.Element {
   }, [setSelectedId, setMobileOpen]);
 
   const randomAnimal = useCallback(() => {
-    const c = countries[Math.floor(Math.random() * countries.length)];
+    const c = records[Math.floor(Math.random() * records.length)];
     flyTo(c);
-  }, [flyTo]);
+  }, [flyTo, records]);
 
   // AR overlay mode
   if (arOpen) {
@@ -56,7 +59,7 @@ export default function Home(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden" style={{ background: 'var(--natura-surface)' }}>
+    <div className={`flex h-screen w-screen flex-col overflow-hidden ${isPrehistoric ? 'prehistoric-atlas' : ''}`} style={{ background: 'var(--natura-surface)' }}>
       {/* ─── Premium Header ─── */}
       <header className="glass-header flex h-14 shrink-0 items-center gap-2 px-4 z-20">
         <MobileSidebar />
@@ -68,20 +71,34 @@ export default function Home(): React.JSX.Element {
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-sm font-semibold font-[var(--font-heading)] text-foreground leading-tight">
-              {t(locale).title}
+              {isPrehistoric ? 'Era Purba Atlas' : t(locale).title}
             </span>
             <span className="text-[10px] text-muted-foreground leading-tight">
-              {filtered.length} {t(locale).countries} · 9 Continents
+              {filtered.length} {isPrehistoric ? 'dinosaurs' : t(locale).countries} · {regions.length} Regions
             </span>
           </div>
           <span className="sm:hidden text-sm font-semibold text-foreground">
-            {t(locale).title}
+            {isPrehistoric ? 'Era Purba' : t(locale).title}
           </span>
         </div>
 
         <div className="flex-1" />
 
         {/* Action buttons */}
+        <button
+          onClick={() => setAtlasMode(isPrehistoric ? 'wildlife' : 'prehistoric')}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg transition-all duration-200 ${
+            isPrehistoric
+              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+          }`}
+          title={isPrehistoric ? 'Switch to wildlife atlas' : 'Switch to Era Purba'}
+          aria-label={isPrehistoric ? 'Switch to wildlife atlas' : 'Switch to dinosaur era atlas'}
+        >
+          {isPrehistoric ? <Bone size={15} /> : <Leaf size={15} />}
+          <span className="hidden sm:inline text-xs font-medium">{isPrehistoric ? 'Era Purba' : 'Wildlife'}</span>
+        </button>
+
         <button
           onClick={() => useMapStore.getState().setSearchOpen(true)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
@@ -122,14 +139,16 @@ export default function Home(): React.JSX.Element {
         </button>
 
         {/* AR mode (mobile only) */}
-        <button
-          onClick={() => setArOpen(true)}
-          className="md:hidden flex items-center gap-1 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
-          title="AR Mode"
-          aria-label="Open AR mode"
-        >
-          <Camera size={15} />
-        </button>
+        {!isPrehistoric && (
+          <button
+            onClick={() => setArOpen(true)}
+            className="md:hidden flex items-center gap-1 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+            title="AR Mode"
+            aria-label="Open AR mode"
+          >
+            <Camera size={15} />
+          </button>
+        )}
 
         {/* Random */}
         <button

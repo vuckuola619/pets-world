@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 const STORAGE_KEY = 'wildlife-favorites'
 
@@ -29,12 +29,7 @@ function writeFavorites(ids: string[]): void {
 
 /** Hook for managing favorite species with localStorage persistence */
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<string[]>([])
-
-  // Load favorites from localStorage on mount
-  useEffect(() => {
-    setFavorites(readFavorites())
-  }, [])
+  const [favorites, setFavorites] = useState<string[]>(() => readFavorites())
 
   const toggleFavorite = useCallback((id: string) => {
     setFavorites((prev) => {

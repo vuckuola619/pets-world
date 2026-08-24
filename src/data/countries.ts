@@ -16,12 +16,16 @@ export const animalSchema = z.object({
   emoji: z.string(),
   classification: z.string(),
   diet: z.string(),
-  conservationStatus: z.enum(['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Data Deficient']),
+  conservationStatus: z.enum(['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Data Deficient', 'Extinct']),
   indigenous: z.boolean(),
   funFacts: z.array(z.string()),
   habitat: z.string(),
   population: z.string(),
   wikiUrl: z.string().optional(),
+  imageUrl: z.string().optional(),
+  imageAlt: z.string().optional(),
+  imageCredit: z.string().optional(),
+  imageKind: z.enum(['photo', 'illustration']).optional(),
 })
 
 /** Parsed animal entries from raw JSON data */

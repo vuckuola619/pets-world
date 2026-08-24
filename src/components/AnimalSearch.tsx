@@ -3,13 +3,13 @@ import React from 'react';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Search, X } from "lucide-react";
-import { countries } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { IUCN_CONFIG } from "../lib/iucn";
 import { t } from "../lib/i18n";
+import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 
-const IUCN_FILTERS = ["LC", "NT", "VU", "EN", "CR"];
-const ALL_CLASSES = Array.from(new Set(countries.map((c) => c.classification))).sort();
+const WILDLIFE_IUCN_FILTERS = ["LC", "NT", "VU", "EN", "CR"];
+const PREHISTORIC_IUCN_FILTERS = ["EX"];
 
 /** Maps conservation status string to IUCN code */
 function conservationToCode(status: string): string {
@@ -20,6 +20,7 @@ function conservationToCode(status: string): string {
     "Endangered": "EN",
     "Critically Endangered": "CR",
     "Data Deficient": "DD",
+    "Extinct": "EX",
   };
   return map[status] ?? "LC";
 }
@@ -31,8 +32,11 @@ export default function AnimalSearch(): React.JSX.Element | null {
   const [iucnFilters, setIucnFilters] = useState<string[]>([]);
   const [classFilters, setClassFilters] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { selectedId, setSelectedId, locale, setSearchQuery, setActiveRegion } = useMapStore();
+  const { atlasMode, selectedId, setSelectedId, locale, setSearchQuery, setActiveRegion } = useMapStore();
   const tr = t(locale);
+  const records = useMemo(() => getAtlasRecords(atlasMode), [atlasMode]);
+  const allClasses = useMemo(() => Array.from(new Set(records.map((c) => c.classification))).sort(), [records]);
+  const iucnFilterOptions = atlasMode === 'prehistoric' ? PREHISTORIC_IUCN_FILTERS : WILDLIFE_IUCN_FILTERS;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -52,25 +56,27 @@ export default function AnimalSearch(): React.JSX.Element | null {
 
   const results = useMemo(() => {
     const q = query.toLowerCase();
-    return countries.filter((c) => {
-      const matchSearch = !q || c.animal.toLowerCase().includes(q) || c.scientificName.toLowerCase().includes(q) || c.country.toLowerCase().includes(q);
-      const matchIucn = iucnFilters.length === 0 || iucnFilters.some((f) => {
+    const activeIucnFilters = iucnFilters.filter((f) => iucnFilterOptions.includes(f));
+    const activeClassFilters = classFilters.filter((f) => allClasses.includes(f));
+    return records.filter((c) => {
+      const matchSearch = !q || [c.animal, c.scientificName, c.country, c.region, c.habitat, ...c.funFacts].join(' ').toLowerCase().includes(q);
+      const matchIucn = activeIucnFilters.length === 0 || activeIucnFilters.some((f) => {
         const statusCode = conservationToCode(c.conservationStatus);
         return statusCode === f;
       });
-      const matchClass = classFilters.length === 0 || classFilters.includes(c.classification);
+      const matchClass = activeClassFilters.length === 0 || activeClassFilters.includes(c.classification);
       return matchSearch && matchIucn && matchClass;
     });
-  }, [query, iucnFilters, classFilters]);
+  }, [query, iucnFilters, iucnFilterOptions, classFilters, allClasses, records]);
 
   const selectAnimal = useCallback((id: string) => {
-    const c = countries.find((x) => x.id === id);
+    const c = records.find((x) => x.id === id);
     if (!c) return;
     setSelectedId(id);
     setSearchQuery("");
     setActiveRegion("All");
     setIsOpen(false);
-  }, [setSelectedId, setSearchQuery, setActiveRegion]);
+  }, [records, setSelectedId, setSearchQuery, setActiveRegion]);
 
   const toggleFilter = (arr: string[], set: (v: string[]) => void, val: string) => {
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -121,7 +127,7 @@ export default function AnimalSearch(): React.JSX.Element | null {
 
         {/* IUCN filter chips */}
         <div className="flex gap-1 px-4 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-          {IUCN_FILTERS.map((f) => (
+          {iucnFilterOptions.map((f) => (
             <button key={f} onClick={() => toggleFilter(iucnFilters, setIucnFilters, f)}
               className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition-colors ${
                 iucnFilters.includes(f) ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground hover:bg-accent/80"
@@ -134,7 +140,7 @@ export default function AnimalSearch(): React.JSX.Element | null {
 
         {/* Class filter chips */}
         <div className="flex flex-wrap gap-1 px-4 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-          {ALL_CLASSES.map((c) => (
+          {allClasses.map((c) => (
             <button key={c} onClick={() => toggleFilter(classFilters, setClassFilters, c)}
               className={`text-[10px] px-2 py-0.5 rounded-full transition-colors ${
                 classFilters.includes(c) ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground hover:bg-accent/80"

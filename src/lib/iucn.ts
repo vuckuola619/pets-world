@@ -19,4 +19,5 @@ export const STATUS_CODE: Record<string, string> = {
   'Near Threatened': 'NT',
   'Least Concern': 'LC',
   'Data Deficient': 'DD',
+  'Extinct': 'EX',
 } as const;

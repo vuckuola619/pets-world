@@ -2,10 +2,13 @@
 import React from 'react';
 
 import { X, GitCompareArrows } from "lucide-react";
-import { countries } from "../data/countries";
+import type { AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
+import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
+import { t } from "../lib/i18n";
+import { getAtlasProfileBySlug, translateCountry, getProfileFunFacts, intervalMap, habitMap } from "../data/atlasProfiles";
 
 /** Extracts a numeric value from a population string for comparison */
 function parsePopulation(pop: string): number | null {
@@ -46,11 +49,13 @@ function CompareBar({ label, values, unit, format }: {
   );
 }
 
-function CompareAnimalHeader({ animal }: { animal: any }): React.JSX.Element {
-  const { imageUrl, imageLoading } = useAnimalMedia(animal.animal, animal.wikiUrl);
+function CompareAnimalHeader({ animal }: { animal: AnimalEntry }): React.JSX.Element {
+  const { imageUrl, imageLoading } = useAnimalMedia(animal.animal, animal.wikiUrl, animal.imageUrl);
   const [hasError, setHasError] = React.useState(false);
   const code = STATUS_CODE[animal.conservationStatus as keyof typeof STATUS_CODE] || 'LC';
   const iucn = IUCN_CONFIG[code as keyof typeof IUCN_CONFIG];
+  const { locale } = useMapStore();
+  const profile = getAtlasProfileBySlug(animal.slug) ?? null;
 
   return (
     <div className="glass-card rounded-xl p-4 text-center">
@@ -67,18 +72,22 @@ function CompareAnimalHeader({ animal }: { animal: any }): React.JSX.Element {
         <span className="w-2 h-2 rounded-full" style={{ background: iucn?.bg ?? '#888' }} />
         <span className="text-[10px] font-bold" style={{ color: iucn?.bg ?? '#888' }}>{code}</span>
       </div>
-      <div className="text-[10px] text-muted-foreground mt-1">{animal.flag} {animal.country}</div>
+      <div className="text-[10px] text-muted-foreground mt-1">{animal.flag} {profile ? translateCountry(profile.country, locale) : animal.country}</div>
     </div>
   );
 }
 
 /** Species comparison panel — floating bottom bar + full modal */
 export default function ComparePanel(): React.JSX.Element | null {
-  const { compareIds, compareOpen, setCompareOpen, removeCompare, clearCompare } = useMapStore();
+  const { atlasMode, compareIds, compareOpen, setCompareOpen, removeCompare, clearCompare, locale } = useMapStore();
+  const tr = t(locale);
 
   if (compareIds.length === 0) return null;
 
-  const animals = compareIds.map((id) => countries.find((c) => c.id === id)).filter(Boolean);
+  const records = getAtlasRecords(atlasMode);
+  const animals = compareIds
+    .map((id) => records.find((c) => c.id === id))
+    .filter((animal): animal is AnimalEntry => Boolean(animal));
 
   // Floating bottom bar showing selected species
   if (!compareOpen) {
@@ -88,13 +97,13 @@ export default function ComparePanel(): React.JSX.Element | null {
           <GitCompareArrows size={16} className="text-muted-foreground shrink-0" />
           <div className="flex items-center gap-2">
             {animals.map((a) => (
-              <div key={a!.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: 'var(--accent)' }}>
-                <span>{a!.emoji}</span>
-                <span className="text-foreground max-w-[80px] truncate">{a!.animal}</span>
+              <div key={a.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: 'var(--accent)' }}>
+                <span>{a.emoji}</span>
+                <span className="text-foreground max-w-[80px] truncate">{a.animal}</span>
                 <button
-                  onClick={() => removeCompare(a!.id)}
+                  onClick={() => removeCompare(a.id)}
                   className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={`Remove ${a!.animal} from comparison`}
+                  aria-label={`Remove ${a.animal} from comparison`}
                 >
                   <X size={12} />
                 </button>
@@ -143,7 +152,7 @@ export default function ComparePanel(): React.JSX.Element | null {
           {/* Species headers */}
           <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${animals.length}, 1fr)` }}>
             {animals.map((a) => (
-              <CompareAnimalHeader key={a!.id} animal={a} />
+              <CompareAnimalHeader key={a.id} animal={a} />
             ))}
           </div>
 
@@ -151,13 +160,32 @@ export default function ComparePanel(): React.JSX.Element | null {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {(['classification', 'diet', 'region', 'habitat'] as const).map((field) => (
               <div key={field} className="glass-card rounded-xl p-3">
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{field}</div>
-                {animals.map((a) => (
-                  <div key={a!.id} className="text-xs text-foreground flex items-center gap-1.5 mb-1">
-                    <span>{a!.emoji}</span>
-                    <span className="truncate">{field === 'habitat' ? a![field].slice(0, 30) : a![field]}</span>
-                  </div>
-                ))}
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  {tr.detail[field as keyof typeof tr.detail] ?? field}
+                </div>
+                {animals.map((a) => {
+                  const profile = getAtlasProfileBySlug(a.slug) ?? null;
+                  let displayVal = a[field];
+                  if (field === 'classification') {
+                    displayVal = tr.classification[a.classification as keyof typeof tr.classification] ?? a.classification;
+                  } else if (field === 'diet') {
+                    displayVal = tr.diets[a.diet as keyof typeof tr.diets] ?? a.diet;
+                  } else if (field === 'region') {
+                    displayVal = tr.regions[a.region as keyof typeof tr.regions] ?? a.region;
+                  } else if (field === 'habitat') {
+                    if (locale === 'id' && profile?.atlasMode === 'prehistoric' && profile.fossil) {
+                      const fossil = profile.fossil;
+                      const intervalName = intervalMap[fossil.interval] || fossil.interval;
+                      displayVal = `Formasi ${fossil.formation}, ${fossil.locality}, ${intervalName}`;
+                    }
+                  }
+                  return (
+                    <div key={a.id} className="text-xs text-foreground flex items-center gap-1.5 mb-1">
+                      <span>{a.emoji}</span>
+                      <span className="truncate" title={displayVal}>{field === 'habitat' ? displayVal.slice(0, 30) : displayVal}</span>
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -166,25 +194,29 @@ export default function ComparePanel(): React.JSX.Element | null {
           <div className="space-y-4">
             <CompareBar
               label="Population"
-              values={animals.map((a) => parsePopulation(a!.population))}
+              values={animals.map((a) => parsePopulation(a.population))}
               format={(v) => v.toLocaleString()}
             />
           </div>
 
           {/* Fun Facts comparison */}
           <div>
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Fun Facts</div>
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tr.compare.funFacts}</div>
             <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${animals.length}, 1fr)` }}>
-              {animals.map((a) => (
-                <div key={a!.id} className="space-y-2">
-                  <div className="text-xs font-medium text-foreground flex items-center gap-1">{a!.emoji} {a!.animal}</div>
-                  {a!.funFacts.slice(0, 3).map((f, i) => (
-                    <div key={i} className="text-[11px] text-muted-foreground leading-relaxed glass-card rounded-lg p-2">
-                      {f}
-                    </div>
-                  ))}
-                </div>
-              ))}
+              {animals.map((a) => {
+                const profile = getAtlasProfileBySlug(a.slug) ?? null;
+                const facts = profile ? getProfileFunFacts(profile, locale) : a.funFacts;
+                return (
+                  <div key={a.id} className="space-y-2">
+                    <div className="text-xs font-medium text-foreground flex items-center gap-1">{a.emoji} {a.animal}</div>
+                    {facts.slice(0, 3).map((f, i) => (
+                      <div key={i} className="text-[11px] text-muted-foreground leading-relaxed glass-card rounded-lg p-2">
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
