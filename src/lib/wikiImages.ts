@@ -1,4 +1,9 @@
-/** Derives a sized Wikimedia thumbnail URL from an original-file URL. */
+/**
+ * Derives a sized Wikimedia thumbnail URL from an original-file URL.
+ * Wikimedia only serves a fixed set of thumb widths — arbitrary sizes
+ * return HTTP 400 ("Use thumbnail sizes listed on ..."). 120px is verified
+ * allowed and crisp enough for map markers (38px @ up to 3x DPR).
+ */
 export function wikiThumbUrl(url: string, px: number): string {
   if (!url.startsWith('https://upload.wikimedia.org/wikipedia/commons/')) return url
   const marker = '/wikipedia/commons/'
