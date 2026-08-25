@@ -326,7 +326,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         {filtered.map((c) => {
           const photoUrl =
             isPrehistoric && c.imageKind === "photo" && c.imageUrl
-              ? wikiThumbUrl(c.imageUrl, 96)
+              ? wikiThumbUrl(c.imageUrl, 120)
               : null
           return (
           <Marker key={c.id} longitude={c.lng} latitude={c.lat} anchor="center">
