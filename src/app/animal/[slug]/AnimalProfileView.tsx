@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { IUCN_CONFIG, STATUS_CODE } from '@/lib/iucn'
 import AnimalDetailsClient from './AnimalDetailsClient'
 import PopulationChart from '@/components/PopulationChart'
+import GeologicTimeBar from '@/components/GeologicTimeBar'
 import { useMapStore } from "@/store/useMapStore";
 import {
   type AtlasProfile,
@@ -187,6 +188,13 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
           </section>
         )}
 
+        {/* Geologic timeline (dinosaurs) */}
+        {isPrehistoric && animal.fossil && (
+          <section className="animate-fade-in-up" style={{ animationDelay: '0.12s' }}>
+            <GeologicTimeBar fossil={animal.fossil} width={320} />
+          </section>
+        )}
+
         <section className="animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
           <SectionTitle color="var(--natura-emerald)">{t(locale).detail.description}</SectionTitle>
           <p className="text-muted-foreground leading-relaxed text-[15px]">
@@ -216,7 +224,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
         {animal.fossilDistribution && (
           <section className="animate-fade-in-up" style={{ animationDelay: '0.22s' }}>
             <SectionTitle color="var(--natura-emerald)">
-              {locale === 'id' ? 'Sebaran Fosil' : 'Fossil Distribution'}
+              {t(locale).detail.fossilDistribution}
             </SectionTitle>
             <p className="text-muted-foreground leading-relaxed text-[15px]">
               {locale === 'id' ? (animal.fossilDistribution_id || animal.fossilDistribution) : animal.fossilDistribution}

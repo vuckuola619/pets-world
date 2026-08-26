@@ -90,7 +90,7 @@ export default function Sidebar(): React.JSX.Element {
   };
 
   return (
-    <aside className="hidden md:flex w-80 shrink-0 flex-col gap-3 p-4 border-r border-border z-10 overflow-hidden" style={{ background: 'var(--sidebar)' }}>
+    <aside key={atlasMode} className="hidden md:flex w-80 shrink-0 flex-col gap-3 p-4 border-r border-border z-10 overflow-hidden animate-fade-in-scale" style={{ background: 'var(--sidebar)' }}>
       {/* Search */}
       <div className="relative group">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
@@ -111,7 +111,7 @@ export default function Sidebar(): React.JSX.Element {
             <button
               key={c}
               onClick={() => setActiveRegion(c)}
-              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 ${
+              className={`press flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 ${
                 isActive
                   ? "region-pill-active"
                   : "bg-accent text-muted-foreground hover:bg-accent/80 hover:text-foreground"
@@ -127,13 +127,13 @@ export default function Sidebar(): React.JSX.Element {
       {/* Counter + About link + Favorites filter */}
       <div className="flex items-center justify-between px-1">
         <span className="text-[11px] text-muted-foreground font-medium">
-          {filtered.length} {atlasMode === 'prehistoric' ? 'dinosaurs' : 'species'}
+          {filtered.length} {atlasMode === 'prehistoric' ? tr.dinosaurUnit : tr.speciesUnit}
         </span>
         <div className="flex items-center gap-1">
           <Link
             href="/about"
             className="text-[11px] font-medium px-2 py-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
-            title={t(locale).about.link}
+            title={tr.about.link}
           >
             {t(locale).about.link}
           </Link>
@@ -154,7 +154,15 @@ export default function Sidebar(): React.JSX.Element {
 
       {/* Virtualized list */}
       <div ref={parentRef} className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
-        {(!mounted || virtualizer.getVirtualItems().length === 0) && <AnimalListSkeleton />}
+        {mounted && filtered.length === 0 ? (
+          <div className="px-4 py-10 text-center animate-fade-in-up">
+            <div className="text-2xl" aria-hidden>🔍</div>
+            <div className="mt-2 text-sm font-medium text-foreground">{tr.noResults}</div>
+            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{tr.noResultsHint}</div>
+          </div>
+        ) : (
+          !mounted && <AnimalListSkeleton />
+        )}
         <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const item = groupedItems[virtualItem.index];
@@ -236,8 +244,19 @@ export default function Sidebar(): React.JSX.Element {
 
                 {/* Favorite button */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); toggleFavorite(c.id); }}
-                  className="shrink-0 p-0.5 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isFav) {
+                      const svg = e.currentTarget.querySelector('svg');
+                      if (svg) {
+                        svg.classList.remove('heart-pop');
+                        void svg.getBoundingClientRect();
+                        svg.classList.add('heart-pop');
+                      }
+                    }
+                    toggleFavorite(c.id);
+                  }}
+                  className="press shrink-0 p-0.5 transition-colors"
                   aria-label={isFav ? `Remove ${c.animal} from favorites` : `Add ${c.animal} to favorites`}
                 >
                   <Heart size={12} fill={isFav ? "#ef4444" : "none"} className={isFav ? "text-red-500" : "text-muted-foreground/30 hover:text-red-400"} />
@@ -250,7 +269,7 @@ export default function Sidebar(): React.JSX.Element {
                     if (isInCompare) removeCompare(c.id);
                     else addCompare(c.id);
                   }}
-                  className={`shrink-0 p-0.5 transition-colors ${isInCompare ? "text-primary" : "text-muted-foreground/30 hover:text-primary/60"}`}
+                  className={`press shrink-0 p-0.5 transition-colors ${isInCompare ? "text-primary" : "text-muted-foreground/30 hover:text-primary/60"}`}
                   aria-label={isInCompare ? `Remove ${c.animal} from comparison` : `Add ${c.animal} to comparison`}
                 >
                   <GitCompareArrows size={12} />

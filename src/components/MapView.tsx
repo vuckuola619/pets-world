@@ -555,24 +555,30 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
       {/* IUCN Legend with full status names on hover */}
       <div className="hidden md:block absolute bottom-4 left-4 z-10">
         <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible" }}>
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">IUCN Conservation Status</div>
+          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title={tr.iucnInfo.intro}>
+            IUCN Conservation Status
+          </div>
           <div className="grid grid-cols-3 gap-x-3 gap-y-1.5" style={{ overflow: "visible" }}>
             {["LC", "NT", "VU", "EN", "CR", "EX"].map((code) => {
               const config = IUCN_CONFIG[code];
+              const info = tr.iucnInfo[code as keyof typeof tr.iucnInfo];
               return (
-                <div key={code} className="flex items-center gap-1.5 group cursor-default relative" title={config?.label ?? code}>
+                <div key={code} className="flex items-center gap-1.5 group cursor-help relative" title={config?.label ?? code}>
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/5 group-hover:scale-125 transition-transform duration-200"
                     style={{ background: config?.bg ?? "#888" }}
                   />
                   <span className="text-[10px] text-foreground/80 font-medium group-hover:text-foreground transition-colors">{code}</span>
-                  {/* Visual tooltip with full name */}
-                  <span
-                    className="absolute bottom-full left-1/2 mb-1.5 whitespace-nowrap text-[9px] font-medium bg-foreground text-background px-2 py-1 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
-                    style={{ transform: "translateX(-50%)", zIndex: 50 }}
+                  {/* Educational tooltip: full name + what it means */}
+                  <div
+                    className="absolute bottom-full left-0 mb-1.5 w-52 normal-case tracking-normal text-left opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
+                    style={{ zIndex: 50 }}
                   >
-                    {config?.label ?? code}
-                  </span>
+                    <div className="glass-card rounded-lg px-2.5 py-2 shadow-lg">
+                      <div className="text-[10px] font-bold text-foreground">{config?.label ?? code}</div>
+                      <div className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{info}</div>
+                    </div>
+                  </div>
                 </div>
               );
             })}

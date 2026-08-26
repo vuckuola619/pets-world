@@ -2,7 +2,9 @@
 import React from 'react';
 
 import { useMemo } from 'react';
-import { getPopulationTrend, TREND_COLORS, TREND_LABELS, TREND_ICONS, type TrendDirection } from '../data/populationTrends';
+import { getPopulationTrend, TREND_COLORS, TREND_ICONS, type TrendDirection } from '../data/populationTrends';
+import { t } from '../lib/i18n';
+import { useMapStore } from '../store/useMapStore';
 
 interface PopulationChartProps {
   slug: string;
@@ -20,9 +22,11 @@ export default function PopulationChart({
   width = 200,
   height = 60,
 }: PopulationChartProps): React.JSX.Element {
+  const locale = useMapStore((s) => s.locale);
   const trend = useMemo(() => getPopulationTrend(slug, conservationStatus), [slug, conservationStatus]);
+  const trendTr = t(locale).populationTrend;
   const color = TREND_COLORS[trend.direction];
-  const label = TREND_LABELS[trend.direction];
+  const label = trendTr[trend.direction satisfies keyof typeof trendTr] ?? trendTr.unknown;
   const icon = TREND_ICONS[trend.direction];
 
   const padding = 4;
@@ -50,7 +54,7 @@ export default function PopulationChart({
     <div className="glass-card rounded-xl p-3 group hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-between mb-1">
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Population Trend
+          {trendTr.title}
         </div>
         <div className="flex items-center gap-1">
           <span className="text-xs">{icon}</span>

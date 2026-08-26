@@ -46,6 +46,10 @@ export function useTheme() {
   }, [themeState])
 
   const toggleTheme = useCallback(() => {
+    // One-shot color glide so the switch doesn't snap; removed after 350ms.
+    const root = document.documentElement
+    root.classList.add('theme-transition')
+    window.setTimeout(() => root.classList.remove('theme-transition'), 350)
     const next = themeState === 'light' ? 'dark' : themeState === 'dark' ? 'system' : 'light'
     setTheme(next)
   }, [themeState, setTheme])

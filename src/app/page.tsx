@@ -87,7 +87,7 @@ export default function Home(): React.JSX.Element {
         {/* Action buttons */}
         <button
           onClick={() => setAtlasMode(isPrehistoric ? 'wildlife' : 'prehistoric')}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg transition-all duration-200 ${
+          className={`flex items-center gap-1.5 press px-2.5 py-1.5 text-sm rounded-lg transition-all duration-200 ${
             isPrehistoric
               ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -101,7 +101,7 @@ export default function Home(): React.JSX.Element {
 
         <button
           onClick={() => useMapStore.getState().setSearchOpen(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+          className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
           title="Search (⌘K)"
         >
           <Search size={15} />
@@ -111,7 +111,7 @@ export default function Home(): React.JSX.Element {
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+          className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
           title={`Theme: ${theme}`}
           aria-label={`Switch theme, currently ${theme}`}
         >
@@ -121,7 +121,7 @@ export default function Home(): React.JSX.Element {
         {/* Audio mute toggle */}
         <button
           onClick={() => audioService.toggleMute()}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+          className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
           title="Toggle sound"
           aria-label={audioService.isMuted() ? 'Unmute sounds' : 'Mute sounds'}
         >
@@ -131,7 +131,7 @@ export default function Home(): React.JSX.Element {
         {/* Locale toggle */}
         <button
           onClick={() => setLocale(locale === 'id' ? 'en' : 'id')}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+          className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
           aria-label={`Switch to ${locale === 'id' ? 'English' : 'Indonesian'}`}
         >
           <Globe size={15} />
@@ -142,7 +142,7 @@ export default function Home(): React.JSX.Element {
         {!isPrehistoric && (
           <button
             onClick={() => setArOpen(true)}
-            className="md:hidden flex items-center gap-1 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+            className="md:hidden flex items-center gap-1 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
             title="AR Mode"
             aria-label="Open AR mode"
           >

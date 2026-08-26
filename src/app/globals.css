@@ -403,6 +403,52 @@
   background: var(--natura-emerald);
 }
 
+/* ─── Press feedback ────────────────────────── */
+/* Add .press to any tappable control: subtle shrink while held. Fast and
+   small on purpose — this tier is used dozens of times a day. */
+.press {
+  transition: transform 130ms ease-out;
+}
+.press:active {
+  transform: scale(0.96);
+}
+
+/* ─── Favorite pop ────────────────────────── */
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.heart-pop {
+  animation: heart-pop 220ms ease-out;
+}
+
+/* ─── Theme crossfade ────────────────────────── */
+/* Applied to <html> for ~350ms during a theme toggle so colors glide
+   instead of snapping. Time-boxed so it never affects normal rendering. */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease !important;
+  transition-delay: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active {
+    transform: none;
+  }
+  .heart-pop {
+    animation: none;
+  }
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: none !important;
+  }
+}
+
 /* ─── Reduced motion ────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse,
