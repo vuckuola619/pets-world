@@ -23,10 +23,12 @@ function applyTheme(theme: 'light' | 'dark' | 'system'): void {
 export function useTheme() {
   const themeState = useMapStore((s) => s.theme)
   const setTheme = useMapStore((s) => s.setTheme)
+  // Lazy init: hydration happens in one render, no cascading effect needed.
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    const id = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(id)
   }, [])
 
   // Apply theme on mount and changes

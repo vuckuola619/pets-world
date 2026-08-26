@@ -39,8 +39,7 @@ function StatCard({ icon, label, value }: { icon: string; label: string; value: 
 export default function AnimalProfileView({ animal }: { animal: AtlasProfile }): React.JSX.Element {
   const locale = useMapStore(s => s.locale);
   const isPrehistoric = animal.atlasMode === 'prehistoric';
-  const animalAny = animal as any;
-  
+
   // 1. Description Translation
   const description = getProfileDescription(animal, locale);
 
@@ -96,27 +95,27 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
       {/* Hero Section */}
       <div className="relative h-[45vh] min-h-[320px] w-full overflow-hidden flex items-end">
         <div className="absolute inset-0">
-          {animalAny.modelUrl ? (
+          {animal.modelUrl ? (
             <iframe
               title={animal.commonName}
-              src={animalAny.modelUrl}
+              src={animal.modelUrl}
               className="w-full h-full border-0"
               allow="autoplay; fullscreen; xr-spatial-tracking"
               allowFullScreen
             />
-          ) : animalAny.videoUrl ? (
+          ) : animal.videoUrl ? (
             <video
-              src={animalAny.videoUrl}
+              src={animal.videoUrl}
               className="w-full h-full object-cover"
               autoPlay
               loop
               muted
               playsInline
             />
-          ) : animalAny.imageUrl ? (
+          ) : animal.images[0]?.url ? (
             <img
-              src={animalAny.imageUrl}
-              alt={animalAny.imageAlt || animal.commonName}
+              src={animal.images[0].url}
+              alt={animal.images[0].alt || animal.commonName}
               className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
             />
           ) : (
@@ -125,9 +124,9 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--natura-surface)] via-[var(--natura-surface)]/80 to-transparent pointer-events-none" />
-          {animalAny.imageCredit ? (
+          {animal.images[0]?.credit ? (
             <span className="absolute bottom-2 right-3 text-[10px] text-white/75 bg-black/35 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none select-none">
-              {animalAny.imageCredit}
+              {animal.images[0].credit}
             </span>
           ) : null}
         </div>
@@ -214,13 +213,13 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
           </div>
         </section>
 
-        {animalAny.fossilDistribution && (
+        {animal.fossilDistribution && (
           <section className="animate-fade-in-up" style={{ animationDelay: '0.22s' }}>
             <SectionTitle color="var(--natura-emerald)">
               {locale === 'id' ? 'Sebaran Fosil' : 'Fossil Distribution'}
             </SectionTitle>
             <p className="text-muted-foreground leading-relaxed text-[15px]">
-              {locale === 'id' ? (animalAny.fossilDistribution_id || animalAny.fossilDistribution) : animalAny.fossilDistribution}
+              {locale === 'id' ? (animal.fossilDistribution_id || animal.fossilDistribution) : animal.fossilDistribution}
             </p>
           </section>
         )}
