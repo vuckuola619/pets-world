@@ -124,23 +124,32 @@ export default function Sidebar(): React.JSX.Element {
         })}
       </div>
 
-      {/* Counter + Favorites filter */}
+      {/* Counter + About link + Favorites filter */}
       <div className="flex items-center justify-between px-1">
         <span className="text-[11px] text-muted-foreground font-medium">
           {filtered.length} {atlasMode === 'prehistoric' ? 'dinosaurs' : 'species'}
         </span>
-        <button
-          onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-          className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full transition-all duration-200 ${
-            showFavoritesOnly
-              ? "bg-red-500/10 text-red-500"
-              : "text-muted-foreground hover:text-foreground hover:bg-accent"
-          }`}
-          title={showFavoritesOnly ? "Show all" : "Show favorites only"}
-        >
-          <Heart size={11} fill={showFavoritesOnly ? "currentColor" : "none"} />
-          {favorites.length > 0 && <span>{favorites.length}</span>}
-        </button>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/about"
+            className="text-[11px] font-medium px-2 py-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+            title={t(locale).about.link}
+          >
+            {t(locale).about.link}
+          </Link>
+          <button
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full transition-all duration-200 ${
+              showFavoritesOnly
+                ? "bg-red-500/10 text-red-500"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            }`}
+            title={showFavoritesOnly ? "Show all" : "Show favorites only"}
+          >
+            <Heart size={11} fill={showFavoritesOnly ? "currentColor" : "none"} />
+            {favorites.length > 0 && <span>{favorites.length}</span>}
+          </button>
+        </div>
       </div>
 
       {/* Virtualized list */}

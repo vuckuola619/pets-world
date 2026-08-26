@@ -16,6 +16,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://pets-world.pages.dev"),
   title: "World Wildlife Atlas — Interactive Species Explorer",
   description:
     "Discover 186+ wildlife species across 9 continents. Explore conservation status, habitats, and fun facts on an interactive global map.",

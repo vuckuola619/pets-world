@@ -340,7 +340,6 @@ export function translateCountry(country: string, locale: string): string {
 
 export function getProfileFunFacts(profile: AtlasProfile, locale: string): string[] {
   const isPrehistoric = profile.atlasMode === 'prehistoric';
-  const profileAny = profile as any;
   if (locale === 'id') {
     if (isPrehistoric && profile.fossil) {
       const fossil = profile.fossil;
@@ -357,16 +356,15 @@ export function getProfileFunFacts(profile: AtlasProfile, locale: string): strin
         `Ekologi PBDB: makanan ${dietName.toLowerCase()}, kebiasaan hidup ${habitName}.`,
       ];
     }
-    return profileAny.funFacts_id || profile.funFacts;
+    return profile.funFacts_id || profile.funFacts;
   }
   return profile.funFacts;
 }
 
 export function getProfileDescription(profile: AtlasProfile, locale: string): string {
   const isPrehistoric = profile.atlasMode === 'prehistoric';
-  const profileAny = profile as any;
   if (locale === 'id') {
-    if (profileAny.description_id) return profileAny.description_id;
+    if (profile.description_id) return profile.description_id;
     if (isPrehistoric && profile.fossil) {
       const fossil = profile.fossil;
       const countryName = countryMap[profile.country] || profile.country;

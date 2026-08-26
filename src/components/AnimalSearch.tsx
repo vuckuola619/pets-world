@@ -32,7 +32,7 @@ export default function AnimalSearch(): React.JSX.Element | null {
   const [iucnFilters, setIucnFilters] = useState<string[]>([]);
   const [classFilters, setClassFilters] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { atlasMode, selectedId, setSelectedId, locale, setSearchQuery, setActiveRegion } = useMapStore();
+  const { atlasMode, selectedId, setSelectedId, locale, setSearchQuery, setActiveRegion, searchOpen, setSearchOpen } = useMapStore();
   const tr = t(locale);
   const records = useMemo(() => getAtlasRecords(atlasMode), [atlasMode]);
   const allClasses = useMemo(() => Array.from(new Set(records.map((c) => c.classification))).sort(), [records]);
@@ -42,13 +42,20 @@ export default function AnimalSearch(): React.JSX.Element | null {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsOpen((v) => !v);
+        setIsOpen((v) => {
+          const next = !v;
+          setSearchOpen(next);
+          return next;
+        });
       }
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        setSearchOpen(false);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [setSearchOpen]);
 
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 50);
@@ -69,24 +76,30 @@ export default function AnimalSearch(): React.JSX.Element | null {
     });
   }, [query, iucnFilters, iucnFilterOptions, classFilters, allClasses, records]);
 
+  const closeSearch = useCallback(() => {
+    setIsOpen(false);
+    setSearchOpen(false);
+  }, [setSearchOpen]);
+
   const selectAnimal = useCallback((id: string) => {
     const c = records.find((x) => x.id === id);
     if (!c) return;
     setSelectedId(id);
     setSearchQuery("");
     setActiveRegion("All");
-    setIsOpen(false);
-  }, [records, setSelectedId, setSearchQuery, setActiveRegion]);
+    closeSearch();
+  }, [records, setSelectedId, setSearchQuery, setActiveRegion, closeSearch]);
 
   const toggleFilter = (arr: string[], set: (v: string[]) => void, val: string) => {
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
   };
 
-  if (!isOpen) return null;
+  const open = isOpen || searchOpen;
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center md:pt-[15vh]">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeSearch} />
       <div className="relative w-full max-w-lg md:rounded-xl shadow-2xl md:border overflow-hidden flex flex-col max-h-[100dvh] md:max-h-none" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
         {/* Search input */}
         <div className="flex items-center gap-2 px-4 py-4 md:py-3 border-b" style={{ borderColor: 'var(--border)' }}>

@@ -1,6 +1,13 @@
 "use client"
 import React from 'react';
 
+/*
+ * Legacy map shell: mixes maplibre instance refs with manual memoization.
+ * React Compiler cannot preserve it (preserve-manual-memoization) — opt the
+ * rule off for this file only until the component is compiler-friendly.
+ */
+/* eslint-disable react-hooks/preserve-manual-memoization */
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Heart, GitCompareArrows, Volume2, Volume1, BookOpen } from "lucide-react";
 import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
@@ -114,11 +121,23 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const CARD_W = 260;
   const IMG_SIZE = 200;
 
-  function projectToScreen(lng: number, lat: number): { x: number; y: number } | null {
+  // Marker screen positions must be computed outside render (react-hooks/refs).
+  // Positions are refreshed from map events (load, move, hover, click) — a
+  // popup only ever shows after one of those, so no render-time projection.
+  const [markerScreenPos, setMarkerScreenPos] = useState<Record<string, { x: number; y: number }>>({});
+  const updateMarkerScreenPos = useCallback((list: AnimalEntry[]) => {
     const map = mapRef.current?.getMap();
-    if (!map) return null;
-    const point = map.project([lng, lat]);
-    return { x: point.x, y: point.y };
+    if (!map) return;
+    const next: Record<string, { x: number; y: number }> = {};
+    for (const c of list) {
+      const p = map.project([c.lng, c.lat]);
+      next[c.id] = { x: p.x, y: p.y };
+    }
+    setMarkerScreenPos(next);
+  }, []);
+
+  function projectToScreen(id: string): { x: number; y: number } | null {
+    return markerScreenPos[id] ?? null;
   }
 
   function getPopupPosition(
@@ -283,7 +302,6 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     const features = map.queryRenderedFeatures(evt.point, { layers });
     map.getCanvas().style.cursor = features.length ? "pointer" : "";
   }, []);
-
   /* Apply CSS filter to map canvas whenever style changes */
   useEffect(() => {
     const canvas = mapRef.current?.getMap()?.getCanvas();
@@ -296,12 +314,17 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
       <Map
         ref={mapRef}
         {...viewState}
-        onMove={(evt) => { setViewState(evt.viewState); forceUpdate(n => n + 1); }}
+        onMove={(evt) => {
+          setViewState(evt.viewState);
+          forceUpdate(n => n + 1);
+          updateMarkerScreenPos(filtered);
+        }}
         onLoad={() => {
           setIsMapLoaded(true);
           /* Apply CSS filter to canvas for dark/minimal modes */
           const canvas = mapRef.current?.getMap()?.getCanvas();
           if (canvas) canvas.style.filter = MAP_CANVAS_FILTERS[mapStyle];
+          updateMarkerScreenPos(filtered);
         }}
         style={{ width: "100%", height: "100%" }}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -351,7 +374,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         })}
 
         {hovered && !selected && (() => {
-          const pos = projectToScreen(hovered.lng, hovered.lat);
+          const pos = projectToScreen(hovered.id);
           if (!pos) return null;
           return (
             <div
@@ -395,10 +418,10 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
 
         {/* Desktop popup */}
         {selected && (() => {
-          const pos = projectToScreen(selected.lng, selected.lat);
+          const pos = projectToScreen(selected.id);
           if (!pos) return null;
           if (window.innerWidth < 768) return null;
-          const ph = popupRef.current?.offsetHeight ?? 520;
+          const ph = 520;
           const pw = CARD_W;
           const GAP = 16;
           const vw = window.innerWidth;

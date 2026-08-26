@@ -1,9 +1,6 @@
 import React from 'react'
 import { Metadata } from 'next'
-import Link from 'next/link'
-import { IUCN_CONFIG, STATUS_CODE } from '@/lib/iucn'
 import AnimalDetailsClient from './AnimalDetailsClient'
-import PopulationChart from '@/components/PopulationChart'
 import AnimalProfileView from './AnimalProfileView'
 import { getAtlasProfileBySlug, getAtlasProfileStaticParams } from '@/data/atlasProfiles'
 
