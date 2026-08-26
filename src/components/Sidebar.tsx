@@ -127,13 +127,13 @@ export default function Sidebar(): React.JSX.Element {
       {/* Counter + About link + Favorites filter */}
       <div className="flex items-center justify-between px-1">
         <span className="text-[11px] text-muted-foreground font-medium">
-          {filtered.length} {atlasMode === 'prehistoric' ? 'dinosaurs' : 'species'}
+          {filtered.length} {atlasMode === 'prehistoric' ? tr.dinosaurUnit : tr.speciesUnit}
         </span>
         <div className="flex items-center gap-1">
           <Link
             href="/about"
             className="text-[11px] font-medium px-2 py-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
-            title={t(locale).about.link}
+            title={tr.about.link}
           >
             {t(locale).about.link}
           </Link>
@@ -154,7 +154,15 @@ export default function Sidebar(): React.JSX.Element {
 
       {/* Virtualized list */}
       <div ref={parentRef} className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
-        {(!mounted || virtualizer.getVirtualItems().length === 0) && <AnimalListSkeleton />}
+        {mounted && filtered.length === 0 ? (
+          <div className="px-4 py-10 text-center animate-fade-in-up">
+            <div className="text-2xl" aria-hidden>🔍</div>
+            <div className="mt-2 text-sm font-medium text-foreground">{tr.noResults}</div>
+            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{tr.noResultsHint}</div>
+          </div>
+        ) : (
+          !mounted && <AnimalListSkeleton />
+        )}
         <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const item = groupedItems[virtualItem.index];

@@ -166,7 +166,10 @@ export default function AnimalSearch(): React.JSX.Element | null {
         {/* Results */}
         <div className="max-h-[40vh] overflow-y-auto scrollbar-thin">
           {results.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">No results found</div>
+            <div className="px-4 py-8 text-center">
+              <div className="text-sm font-medium text-foreground">{tr.noResults}</div>
+              <div className="mt-1 text-xs text-muted-foreground animate-fade-in-up">{tr.noResultsHint}</div>
+            </div>
           ) : (
             results.map((c) => {
               const code = conservationToCode(c.conservationStatus);

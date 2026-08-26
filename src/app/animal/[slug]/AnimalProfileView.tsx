@@ -216,7 +216,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
         {animal.fossilDistribution && (
           <section className="animate-fade-in-up" style={{ animationDelay: '0.22s' }}>
             <SectionTitle color="var(--natura-emerald)">
-              {locale === 'id' ? 'Sebaran Fosil' : 'Fossil Distribution'}
+              {t(locale).detail.fossilDistribution}
             </SectionTitle>
             <p className="text-muted-foreground leading-relaxed text-[15px]">
               {locale === 'id' ? (animal.fossilDistribution_id || animal.fossilDistribution) : animal.fossilDistribution}
