@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { IUCN_CONFIG, STATUS_CODE } from '@/lib/iucn'
 import AnimalDetailsClient from './AnimalDetailsClient'
 import PopulationChart from '@/components/PopulationChart'
+import GeologicTimeBar from '@/components/GeologicTimeBar'
 import { useMapStore } from "@/store/useMapStore";
 import {
   type AtlasProfile,
@@ -184,6 +185,13 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
         {!isPrehistoric && (
           <section className="animate-fade-in-up" style={{ animationDelay: '0.12s' }}>
             <PopulationChart slug={animal.slug} conservationStatus={animal.conservationStatus} width={320} height={80} />
+          </section>
+        )}
+
+        {/* Geologic timeline (dinosaurs) */}
+        {isPrehistoric && animal.fossil && (
+          <section className="animate-fade-in-up" style={{ animationDelay: '0.12s' }}>
+            <GeologicTimeBar fossil={animal.fossil} width={320} />
           </section>
         )}
 

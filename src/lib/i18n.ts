@@ -161,6 +161,7 @@ const translations = {
     noResultsHint: 'Coba kata kunci lain, atau hapus filternya.',
     speciesUnit: 'spesies',
     dinosaurUnit: 'dinosaurus',
+    geoTime: 'Skala waktu geologis',
     about: {
       link: 'Tentang',
       title: 'Tentang Atlas Ini',
@@ -352,6 +353,7 @@ const translations = {
     noResultsHint: 'Try a different keyword, or clear the filters.',
     speciesUnit: 'species',
     dinosaurUnit: 'dinosaurs',
+    geoTime: 'Geologic time',
     about: {
       link: 'About',
       title: 'About This Atlas',
