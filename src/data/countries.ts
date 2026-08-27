@@ -19,6 +19,8 @@ export const animalSchema = z.object({
   conservationStatus: z.enum(['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Data Deficient', 'Extinct']),
   indigenous: z.boolean(),
   funFacts: z.array(z.string()),
+  funFacts_id: z.array(z.string()).optional(),
+  habitat_id: z.array(z.string()).optional(),
   habitat: z.string(),
   population: z.string(),
   wikiUrl: z.string().optional(),

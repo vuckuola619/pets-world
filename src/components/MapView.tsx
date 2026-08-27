@@ -23,7 +23,7 @@ import { t } from "../lib/i18n";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import MapControls from "./MapControls";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
-import { getAtlasProfileBySlug, translateCountry, getProfileFunFacts } from "../data/atlasProfiles";
+import { translateCountry, getEntryFunFacts } from "../lib/profileText";
 import { useFavorites } from "../hooks/useFavorites";
 import MobileDetailPanel from "./MobileDetailPanel";
 import MapSkeleton from "./MapSkeleton";
@@ -86,18 +86,14 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const filtered = useFilteredAnimals();
   const selected = selectedId ? atlasRecords.find((c) => c.id === selectedId) ?? null : null;
   const hovered = hoveredId ? atlasRecords.find((c) => c.id === hoveredId) ?? null : null;
-  const selectedProfile = selected ? getAtlasProfileBySlug(selected.slug) ?? null : null;
-  const hoveredProfile = hovered ? getAtlasProfileBySlug(hovered.slug) ?? null : null;
   const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl, selected?.imageUrl);
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
-  const [, forceUpdate] = useState(0);
   const popupRef = useRef<HTMLDivElement>(null);
   const CARD_W = 260;
   const IMG_SIZE = 200;
 
-  // Marker screen positions must be computed outside render (react-hooks/refs).
   // Positions are refreshed from map events (load, move, hover, click) — a
   // popup only ever shows after one of those, so no render-time projection.
   const [markerScreenPos, setMarkerScreenPos] = useState<Record<string, { x: number; y: number }>>({});
@@ -111,6 +107,21 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     }
     setMarkerScreenPos(next);
   }, []);
+
+  // Coalesce map-move updates into one animation frame: without this every
+  // pan frame triggered multiple synchronous full-tree renders.
+  const moveRafRef = useRef(0);
+
+  useEffect(() => () => cancelAnimationFrame(moveRafRef.current), []);
+
+  const onMapMove = useCallback((evt: { viewState: ViewState }) => {
+    if (moveRafRef.current) return;
+    moveRafRef.current = requestAnimationFrame(() => {
+      moveRafRef.current = 0;
+      setViewState(evt.viewState);
+      updateMarkerScreenPos(filtered);
+    });
+  }, [setViewState, updateMarkerScreenPos, filtered]);
 
   function projectToScreen(id: string): { x: number; y: number } | null {
     return markerScreenPos[id] ?? null;
@@ -182,9 +193,10 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     type: "circle",
     source: "animals",
     filter: ["has", "point_count"],
+    layout: { visibility: isPrehistoric ? "none" : "visible" },
     paint: {
       "circle-radius": ["step", ["get", "point_count"], 14, 100, 20, 750, 28],
-      "circle-color": "#6366f1",
+      "circle-color": "#2e7d54",
       "circle-opacity": 0.85,
       "circle-stroke-width": 3,
       "circle-stroke-color": "rgba(255,255,255,0.8)",
@@ -199,8 +211,9 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     layout: {
       "text-field": "{point_count_abbreviated}",
       "text-size": 12,
-      // OpenFreeMap serves Noto fonts, not Open Sans
+      // Carto basemaps serve Noto fonts
       "text-font": ["Noto Sans Regular"],
+      visibility: isPrehistoric ? "none" : "visible",
     },
     paint: {
       "text-color": "#fff",
@@ -212,6 +225,8 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     type: "circle",
     source: "animals",
     filter: ["!", ["has", "point_count"]],
+    minzoom: 7.5,
+    layout: { visibility: isPrehistoric ? "none" : "visible" },
     paint: {
       "circle-radius": [
         "case",
@@ -294,11 +309,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
       <Map
         ref={mapRef}
         {...viewState}
-        onMove={(evt) => {
-          setViewState(evt.viewState);
-          forceUpdate(n => n + 1);
-          updateMarkerScreenPos(filtered);
-        }}
+        onMove={onMapMove}
         onLoad={() => {
           setIsMapLoaded(true);
           /* Apply CSS filter to canvas for dark/minimal modes */
@@ -324,8 +335,10 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
           <Layer {...unclusteredPointLayer} />
         </Source>
 
-        {/* Markers: paleo-art thumbnails in prehistoric mode, emoji otherwise */}
-        {filtered.map((c) => {
+        {/* Markers: paleo-art thumbnails in prehistoric mode (the product),
+            emoji in wildlife mode only once clusters dissolve (zoom >= 7.5)
+            so each point is rendered by exactly one pipeline. */}
+        {(isPrehistoric || viewState.zoom >= 7.5) && filtered.map((c) => {
           const photoUrl =
             isPrehistoric && c.imageKind === "photo" && c.imageUrl
               ? localDinoThumb(c.slug, 128)
@@ -370,14 +383,14 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
               <div className="glass-card rounded-xl p-3 min-w-[180px] shadow-lg">
                 <div className="font-semibold text-sm flex items-center gap-2 text-foreground">
                   <span>{hovered.flag}</span>
-                  <span>{hoveredProfile ? translateCountry(hoveredProfile.country, locale) : hovered.country}</span>
+                  <span>{translateCountry(hovered.country, locale)}</span>
                 </div>
                 <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
                   <span className="text-lg">{hovered.emoji}</span>
                   <span className="font-medium text-foreground">{hovered.animal}</span>
                 </div>
                 <div className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
-                  {hoveredProfile ? getProfileFunFacts(hoveredProfile, locale)[0] : hovered.funFacts[0]}
+                  {getEntryFunFacts(hovered, locale)[0]}
                 </div>
                 <div
                   className="mt-2 text-[10px] px-2 py-0.5 rounded-full inline-block font-medium"
@@ -446,7 +459,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                 </div>
                 <div className="text-sm font-semibold flex items-center gap-2 text-foreground">
                   <span>{selected.flag}</span>
-                  <span>{selectedProfile ? translateCountry(selectedProfile.country, locale) : selected.country}</span>
+                  <span>{translateCountry(selected.country, locale)}</span>
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="text-2xl">{selected.emoji}</span>
@@ -492,12 +505,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                   </div>
                 </div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
-                  {selectedProfile ? getProfileFunFacts(selectedProfile, locale).slice(0, 3).map((f, i) => (
-                    <li key={i} className="flex gap-1.5">
-                      <span className="shrink-0 text-xs font-bold" style={{ color: CONTINENT_COLORS[selected.region] }}>{i + 1}.</span>
-                      <span>{f}</span>
-                    </li>
-                  )) : selected.funFacts.slice(0, 3).map((f, i) => (
+                  {getEntryFunFacts(selected, locale).slice(0, 3).map((f, i) => (
                     <li key={i} className="flex gap-1.5">
                       <span className="shrink-0 text-xs font-bold" style={{ color: CONTINENT_COLORS[selected.region] }}>{i + 1}.</span>
                       <span>{f}</span>

@@ -15,7 +15,7 @@ import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import { useState } from "react";
-import { getAtlasProfileBySlug, translateCountry, getProfileFunFacts } from "../data/atlasProfiles";
+import { translateCountry, getEntryFunFacts } from "../lib/profileText";
 
 import { CONTINENT_COLORS } from "../lib/regions";
 
@@ -30,7 +30,6 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
   const isPrehistoric = atlasMode === 'prehistoric';
   const selected = selectedId ? getAtlasRecords(atlasMode).find((c) => c.id === selectedId) ?? null : null;
   const selectedDinosaur = getDinosaurRecord(selected);
-  const selectedProfile = selected ? getAtlasProfileBySlug(selected.slug) ?? null : null;
   const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl, selected?.imageUrl);
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -98,7 +97,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
           {/* Header */}
           <div className="flex items-center gap-2 text-foreground">
             <span className="text-lg">{selected.flag}</span>
-            <span className="font-semibold">{selectedProfile ? translateCountry(selectedProfile.country, locale) : selected.country}</span>
+            <span className="font-semibold">{translateCountry(selected.country, locale)}</span>
           </div>
           <div className="mt-1 flex items-center gap-2">
             <span className="text-2xl">{selected.emoji}</span>
@@ -175,7 +174,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
 
           {/* Fun facts */}
           <ul className="mt-4 space-y-2 text-xs text-muted-foreground leading-relaxed">
-            {(selectedProfile ? getProfileFunFacts(selectedProfile, locale) : selected.funFacts).slice(0, 3).map((f, i) => (
+            {getEntryFunFacts(selected, locale).slice(0, 3).map((f, i) => (
               <li key={i} className="flex gap-2">
                 <span
                   className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
