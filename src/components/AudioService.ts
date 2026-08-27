@@ -47,7 +47,6 @@ class AudioService {
   /** Creates a gain node scaled by current volume */
   private createGain(): [GainNode, AudioContext] {
     const ctx = this.getCtx()
-      if (ctx.state !== 'running') return
     const gain = ctx.createGain()
     return [gain, ctx]
   }
