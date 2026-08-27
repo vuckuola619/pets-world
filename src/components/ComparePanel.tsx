@@ -9,7 +9,7 @@ import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
 import { localDinoThumb } from "../lib/wikiImages";
 import { t } from "../lib/i18n";
-import { getAtlasProfileBySlug, translateCountry, getProfileFunFacts, intervalMap, habitMap } from "../data/atlasProfiles";
+import { translateCountry, getEntryFunFacts, getQuickHabitat, intervalMap, habitMap } from "../lib/profileText";
 
 /** Extracts a numeric value from a population string for comparison */
 function parsePopulation(pop: string): number | null {
@@ -56,7 +56,6 @@ function CompareAnimalHeader({ animal }: { animal: AnimalEntry }): React.JSX.Ele
   const code = STATUS_CODE[animal.conservationStatus as keyof typeof STATUS_CODE] || 'LC';
   const iucn = IUCN_CONFIG[code as keyof typeof IUCN_CONFIG];
   const { locale } = useMapStore();
-  const profile = getAtlasProfileBySlug(animal.slug) ?? null;
 
   return (
     <div className="glass-card rounded-xl p-4 text-center">
@@ -78,7 +77,7 @@ function CompareAnimalHeader({ animal }: { animal: AnimalEntry }): React.JSX.Ele
         <span className="w-2 h-2 rounded-full" style={{ background: iucn?.bg ?? '#888' }} />
         <span className="text-[10px] font-bold" style={{ color: iucn?.bg ?? '#888' }}>{code}</span>
       </div>
-      <div className="text-[10px] text-muted-foreground mt-1">{animal.flag} {profile ? translateCountry(profile.country, locale) : animal.country}</div>
+      <div className="text-[10px] text-muted-foreground mt-1">{animal.flag} {translateCountry(animal.country, locale)}</div>
     </div>
   );
 }
@@ -170,7 +169,6 @@ export default function ComparePanel(): React.JSX.Element | null {
                   {tr.detail[field as keyof typeof tr.detail] ?? field}
                 </div>
                 {animals.map((a) => {
-                  const profile = getAtlasProfileBySlug(a.slug) ?? null;
                   let displayVal = a[field];
                   if (field === 'classification') {
                     displayVal = tr.classification[a.classification as keyof typeof tr.classification] ?? a.classification;
@@ -179,10 +177,8 @@ export default function ComparePanel(): React.JSX.Element | null {
                   } else if (field === 'region') {
                     displayVal = tr.regions[a.region as keyof typeof tr.regions] ?? a.region;
                   } else if (field === 'habitat') {
-                    if (locale === 'id' && profile?.atlasMode === 'prehistoric' && profile.fossil) {
-                      const fossil = profile.fossil;
-                      const intervalName = intervalMap[fossil.interval] || fossil.interval;
-                      displayVal = `Formasi ${fossil.formation}, ${fossil.locality}, ${intervalName}`;
+                    if (locale === 'id') {
+                      displayVal = getQuickHabitat(a);
                     }
                   }
                   return (
@@ -210,8 +206,7 @@ export default function ComparePanel(): React.JSX.Element | null {
             <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tr.compare.funFacts}</div>
             <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${animals.length}, 1fr)` }}>
               {animals.map((a) => {
-                const profile = getAtlasProfileBySlug(a.slug) ?? null;
-                const facts = profile ? getProfileFunFacts(profile, locale) : a.funFacts;
+                const facts = getEntryFunFacts(a, locale);
                 return (
                   <div key={a.id} className="space-y-2">
                     <div className="text-xs font-medium text-foreground flex items-center gap-1">{a.emoji} {a.animal}</div>

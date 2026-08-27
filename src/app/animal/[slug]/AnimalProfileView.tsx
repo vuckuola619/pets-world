@@ -14,7 +14,7 @@ import {
   habitMap,
   getProfileFunFacts,
   getProfileDescription
-} from "@/data/atlasProfiles";
+} from "@/lib/profileText";
 import { t, type TranslationStrings } from '@/lib/i18n';
 
 function SectionTitle({ children, color }: { children: React.ReactNode; color: string }): React.JSX.Element {
