@@ -1,7 +1,7 @@
 /** Supported locale codes */
 export type Locale = 'id' | 'en'
 
-const translations = {
+export const translations = {
   id: {
     title: 'Atlas Satwa Dunia',
     countries: 'negara',
@@ -398,6 +398,15 @@ const translations = {
 
 /** Translation strings type derived from Indonesian locale */
 export type Translations = typeof translations.id
+
+/** Compile-time guard: the en block must have exactly the id block's key
+ *  structure. Values are widened from string literals to `string` (the two
+ *  locales intentionally differ in wording); missing/extra keys fail here. */
+type WidenStrings<T> = {
+  readonly [K in keyof T]: T[K] extends string ? string : WidenStrings<T[K]>
+}
+const _enParityCheck: WidenStrings<Translations> = translations.en
+void _enParityCheck
 
 /** Alias for Translations */
 export type TranslationStrings = Translations
