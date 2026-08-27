@@ -9,6 +9,7 @@ import type { DinosaurAnimalEntry } from "../data/dinosaurs";
 import { useMapStore } from "../store/useMapStore";
 import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
+import { localDinoThumb } from "../lib/wikiImages";
 import { useFavorites } from "../hooks/useFavorites";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
@@ -82,7 +83,7 @@ export default function MobileDetailPanel(): React.JSX.Element | null {
               </div>
             ) : (
               <Image
-                src={imageUrl}
+                src={isPrehistoric && selected.imageKind === 'photo' ? localDinoThumb(selected.slug, 480) : imageUrl}
                 alt={selected.animal}
                 className="w-full object-cover h-full"
                 width={400}

@@ -1,14 +1,16 @@
 /** IUCN conservation status color configuration */
+/** `bg` fills are rendered behind white bold labels across the app, so every
+ *  value must keep a WCAG AA ratio >= 4.5:1 against pure white. */
 export const IUCN_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   EX: { label: 'Extinct', color: '#1a1a1a', bg: '#000000' },
   EW: { label: 'Extinct in Wild', color: '#4a1919', bg: '#7B2020' },
   CR: { label: 'Critically Endangered', color: '#7B1818', bg: '#CC2B2B' },
-  EN: { label: 'Endangered', color: '#7B4A00', bg: '#E07B00' },
-  VU: { label: 'Vulnerable', color: '#7B6B00', bg: '#CCAD00' },
-  NT: { label: 'Near Threatened', color: '#3A6600', bg: '#5A9900' },
-  LC: { label: 'Least Concern', color: '#1A5200', bg: '#2D8A00' },
-  DD: { label: 'Data Deficient', color: '#444', bg: '#888888' },
-  NE: { label: 'Not Evaluated', color: '#444', bg: '#AAAAAA' },
+  EN: { label: 'Endangered', color: '#7B4A00', bg: '#AF6000' },
+  VU: { label: 'Vulnerable', color: '#7B6B00', bg: '#897400' },
+  NT: { label: 'Near Threatened', color: '#3A6600', bg: '#4C8200' },
+  LC: { label: 'Least Concern', color: '#1A5200', bg: '#2C8600' },
+  DD: { label: 'Data Deficient', color: '#444', bg: '#5F5F5F' },
+  NE: { label: 'Not Evaluated', color: '#444', bg: '#737373' },
 }
 
 /** Maps full conservation status name to IUCN abbreviation code */

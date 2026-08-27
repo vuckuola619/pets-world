@@ -1,4 +1,13 @@
 /**
+ * Self-hosted WebP variant for dinosaur taxa, generated once at build time
+ * by scripts/fetch-dino-thumbs.mjs (public/dino/<slug>-<w>w.webp). Using
+ * local files avoids Wikimedia's runtime thumbnailer entirely.
+ */
+export function localDinoThumb(slug: string, width: 128 | 480 | 960): string {
+  return `/dino/${slug}-${width}w.webp`
+}
+
+/**
  * Derives a sized Wikimedia thumbnail URL from an original-file URL.
  * Wikimedia only serves a fixed set of thumb widths — arbitrary sizes
  * return HTTP 400 ("Use thumbnail sizes listed on ..."). 120px is verified

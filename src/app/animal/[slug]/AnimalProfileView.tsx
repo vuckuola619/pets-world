@@ -5,6 +5,7 @@ import { IUCN_CONFIG, STATUS_CODE } from '@/lib/iucn'
 import AnimalDetailsClient from './AnimalDetailsClient'
 import PopulationChart from '@/components/PopulationChart'
 import GeologicTimeBar from '@/components/GeologicTimeBar'
+import { localDinoThumb } from '@/lib/wikiImages'
 import { useMapStore } from "@/store/useMapStore";
 import {
   type AtlasProfile,
@@ -115,9 +116,9 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
             />
           ) : animal.images[0]?.url ? (
             <img
-              src={animal.images[0].url}
+              src={isPrehistoric ? localDinoThumb(animal.slug, 960) : animal.images[0].url}
               alt={animal.images[0].alt || animal.commonName}
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
@@ -125,7 +126,17 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--natura-surface)] via-[var(--natura-surface)]/80 to-transparent pointer-events-none" />
-          {animal.images[0]?.credit ? (
+          {isPrehistoric && animal.images[0]?.url ? (
+            <a
+              href={animal.images[0].url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-2 right-3 text-[10px] text-white/75 bg-black/35 backdrop-blur-sm px-2 py-0.5 rounded-full hover:text-white hover:bg-black/50 transition-colors"
+              title="View full resolution"
+            >
+              ⤢ {animal.images[0].credit || 'Wikipedia / Wikimedia Commons'}
+            </a>
+          ) : animal.images[0]?.credit ? (
             <span className="absolute bottom-2 right-3 text-[10px] text-white/75 bg-black/35 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none select-none">
               {animal.images[0].credit}
             </span>

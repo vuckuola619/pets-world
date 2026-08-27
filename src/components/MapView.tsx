@@ -17,7 +17,7 @@ import { type AnimalEntry } from "../data/countries";
 import { useMapStore, type MapStyleName } from "../store/useMapStore";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { getAtlasRecords } from "../hooks/useAtlasAnimals";
-import { wikiThumbUrl } from "../lib/wikiImages";
+import { localDinoThumb } from "../lib/wikiImages";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
@@ -56,21 +56,34 @@ function makeRasterStyle(name: string, tiles: string[], attribution: string) {
   };
 }
 
-/** All styles use Carto Voyager raster tiles (confirmed reliable CDN path).
- *  Dark and Minimal modes are achieved via CSS filters on the canvas. */
+/** All styles use Carto raster tiles (same reliable CDN). Dark mode uses
+ *  Carto's real dark basemap; Minimal (satellite look) stays a CSS filter
+ *  on the voyager canvas. */
 const VOYAGER_TILES = [
   "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
   "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
   "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
 ];
+const DARK_TILES = [
+  "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+  "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+  "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+];
 const VOYAGER_ATTR = "&copy; OSM contributors &copy; CARTO";
 
 const BASE_STYLE = makeRasterStyle("Carto Voyager", VOYAGER_TILES, VOYAGER_ATTR);
+const DARK_STYLE = makeRasterStyle("Carto Dark", DARK_TILES, VOYAGER_ATTR);
+
+const STYLES: Record<MapStyleName, typeof BASE_STYLE> = {
+  voyager: BASE_STYLE,
+  dark: DARK_STYLE,
+  satellite: BASE_STYLE,
+};
 
 /** CSS filter applied to the .maplibregl-canvas for each style */
 const MAP_CANVAS_FILTERS: Record<MapStyleName, string> = {
   voyager: "none",
-  dark: "invert(1) hue-rotate(180deg) brightness(0.95) contrast(1.1)",
+  dark: "none",
   satellite: "grayscale(0.85) brightness(1.05) contrast(0.9)",
 };
 
@@ -328,7 +341,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         }}
         style={{ width: "100%", height: "100%" }}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        mapStyle={BASE_STYLE as any}
+        mapStyle={STYLES[mapStyle] as any}
         onClick={onMapClick}
         onMouseMove={onMapMouseMove}
       >
@@ -349,7 +362,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         {filtered.map((c) => {
           const photoUrl =
             isPrehistoric && c.imageKind === "photo" && c.imageUrl
-              ? wikiThumbUrl(c.imageUrl, 120)
+              ? localDinoThumb(c.slug, 128)
               : null
           return (
           <Marker key={c.id} longitude={c.lng} latitude={c.lat} anchor="center">
@@ -458,7 +471,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     </div>
                   ) : (
                     <img
-                      src={imageUrl}
+                      src={isPrehistoric && selected.imageKind === 'photo' ? localDinoThumb(selected.slug, 480) : imageUrl}
                       alt={selected.animal}
                       style={{ width: IMG_SIZE, height: IMG_SIZE, objectFit: 'cover', display: 'block' }}
                       onError={() => setHasImgError(true)}
