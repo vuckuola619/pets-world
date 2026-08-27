@@ -7,6 +7,7 @@ import { useMapStore } from "../store/useMapStore";
 import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
+import { localDinoThumb } from "../lib/wikiImages";
 import { t } from "../lib/i18n";
 import { getAtlasProfileBySlug, translateCountry, getProfileFunFacts, intervalMap, habitMap } from "../data/atlasProfiles";
 
@@ -63,7 +64,12 @@ function CompareAnimalHeader({ animal }: { animal: AnimalEntry }): React.JSX.Ele
         {imageLoading || (!imageUrl || hasError) ? (
           <span className="text-4xl block">{animal.emoji}</span>
         ) : (
-          <img src={imageUrl} alt={animal.animal} className="w-full h-full object-cover" onError={() => setHasError(true)} />
+          <img
+            src={animal.imageKind === 'photo' ? localDinoThumb(animal.slug, 128) : imageUrl}
+            alt={animal.animal}
+            className="w-full h-full object-cover"
+            onError={() => setHasError(true)}
+          />
         )}
       </div>
       <div className="font-semibold text-foreground text-sm font-[var(--font-heading)]">{animal.animal}</div>
