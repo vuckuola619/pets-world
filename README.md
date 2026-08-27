@@ -5,7 +5,7 @@
 <h1 align="center">🌍 World Wildlife Atlas</h1>
 
 <p align="center">
-  <strong>Interactive Species Explorer — Discover 186+ Wildlife Species Across 9 Continents</strong>
+  <strong>Interactive Species Explorer — 186+ Wildlife Species Across 9 Continents, Plus 46 Dinosaur Taxa</strong>
 </p>
 
 <p align="center">
@@ -34,21 +34,23 @@
 |---------|-------------|
 | 🗺️ **Interactive Globe** | Full MapLibre GL map with zoom, pan, and marker clustering across all continents |
 | 🦁 **186+ Species** | Comprehensive database with taxonomy, IUCN status, habitats, and fun facts |
+| 🦕 **Dinosaur Era Mode** | Toggle to a prehistoric atlas: 46 PBDB-sourced taxa with fossil evidence cards, verifiable occurrences, Wikimedia life-restoration imagery, and a geologic timeline (Triassic → Cretaceous) |
+| ℹ️ **About & Data Sources** | `/about` page with atlas stats and the open datasets behind every claim (PBDB, IUCN, Wikimedia, NASA) |
 | 🔍 **Instant Search** | Fuzzy search by species name, country, or continent with keyboard shortcuts (⌘K) |
-| 📊 **IUCN Conservation Status** | Interactive legend and color-coded markers (LC → EX) with rich tooltips |
+| 📊 **IUCN Conservation Status** | Interactive legend with plain-language explanations per status, color-coded markers (LC → EX) |
 | 🌿 **Natura Design System** | Premium glassmorphic UI with forest-inspired palette and smooth animations |
 | ⚖️ **Species Comparison** | Select and compare stats side-by-side across distinct species |
 | 📈 **Population Trends** | Visual charts depicting population decline/growth over generations |
-| 🌙 **Dark Mode** | Seamless transition to a stunning eye-friendly dark theme mapping |
-| 📴 **Offline-First (PWA)** | Continue exploring the map offline with automatic caching strategies |
+| 🌙 **Dark Mode** | Native Carto dark basemap with a smooth color-glide transition |
+| 📴 **Offline-First (PWA)** | Installable app with service-worker caching and a branded offline screen |
 | 🔖 **Favorites Collection** | Curate and save a list of your most loved species locally |
 | ✨ **AR Mode** | Immersive Augmented Reality visualization of species in mobile viewports |
 | 📱 **Responsive** | Mobile-first design with dedicated sidebar, bottom sheet, and touch interactions |
-| 🌐 **Bilingual** | English and Indonesian (Bahasa) interface toggle |
+| 🌐 **Bilingual** | English and Indonesian (Bahasa) interface toggle — every label, including charts and legends |
 | 🎲 **Random Explorer** | Discover random species with one click |
-| 🔊 **Audio Feedback** | Subtle hover, selection sounds, and actual animal vocalizations |
+| 🔊 **Audio Feedback** | Subtle hover, selection, and synthesized animal-class sounds |
 | ⚡ **Static Export** | Zero-server deployment — works on GitHub Pages, Netlify, Cloudflare Pages |
-| 🧪 **Tested** | Robust unit tests covering state logic, user preferences, and data stability |
+| 🧪 **Tested** | Vitest suite covering store logic, data contracts, i18n parity, and PWA behavior |
 | 🐼 **API Enrichment** | Optional API-Ninjas integration for extended taxonomy data |
 
 ---
@@ -62,6 +64,9 @@ Interactive map with sidebar species list, continent filters, region search, and
 Full-page species profile with hero banner, stat cards, taxonomy tree, fun facts, and related species.
 
 > Visit `/animal/{slug}` for any species (e.g., `/animal/giant-panda`, `/animal/bengal-tiger`)
+
+### Dinosaur Era Mode
+Click **Era Purba** in the header: the globe flips to 46 fossil taxa with paleo-art markers, PBDB evidence cards, and detail pages like `/animal/tyrannosaurus-rex` — each showing its age range on the Mesozoic timeline.
 
 ---
 
@@ -102,7 +107,9 @@ NEXT_PUBLIC_API_NINJAS_KEY=your_api_key_here
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3987](http://localhost:3987) in your browser.
+
+> The dev server is pinned to port **3987** (see `package.json`) — port 3000 conflicts with common local tooling.
 
 ### Build & Export
 
@@ -143,19 +150,27 @@ npm run format
 ```
 src/
 ├── app/                    # Next.js App Router
+│   ├── about/              # Tentang & data sources (bilingual)
+│   └── animal/[slug]/      # Static profile pages (236 prerendered)
 ├── components/             # Reusable UI Components
-│   ├── MapView.tsx         # MapLibre map with Canvas filters
+│   ├── MapView.tsx         # MapLibre map, markers, popups, IUCN legend
+│   ├── GeologicTimeBar.tsx # Mesozoic timeline for dinosaur profiles
 │   ├── ComparePanel.tsx    # Species Comparison logic
 │   ├── PopulationChart.tsx # Population Chart rendering
 │   ├── AROverlay.tsx       # Augmented Reality view
 │   ├── Sidebar.tsx         # Virtualized species list
 │   └── ui/                 # shadcn/ui primitives
-├── data/                   # 186 species dataset + trends
+├── data/                   # Datasets: animals.json, dinosaurs.ts,
+│   │                       #   dinosaurIllustrations.ts, populationTrends
 ├── hooks/                  # Custom state/UI hooks
-├── store/                  # Zustand global state
-├── lib/                    # Config and pure utility logic
+├── store/                  # Zustand global state (theme, favorites, compare)
+├── lib/                    # i18n, IUCN config, wikiImages, pure utils
 ├── types/                  # TypeScript signatures
-└── test/                   # Vitest suite
+└── test/                   # Vitest suite (78 tests)
+scripts/
+├── render-icons.mjs        # Icon/og-image pipeline (sharp)
+└── fetch-dino-images.mjs   # Paleo-art sourcing pipeline
+public/dino/                # Self-hosted WebP variants (128/480/960w)
 ```
 
 ### Tech Stack
@@ -165,9 +180,9 @@ src/
 | Framework | Next.js 16 (App Router) | RSC, file-based routing, static export |
 | UI | React 19 | Component architecture |
 | Styling | Tailwind CSS 4 + Custom CSS | Natura design system |
-| Map | MapLibre GL / OpenFreeMap | Free keyless vector maps (no API key) |
+| Map | MapLibre GL + Carto raster tiles | Keyless vector-style basemaps (voyager / dark) |
 | State | Zustand | Lightweight resilient global state |
-| Storage | IndexedDB / LocalStorage | Offline favorites and sync |
+| Storage | LocalStorage | Favorites and theme persistence |
 | Testing | Vitest + RTL | Behavior and component testing |
 | Animation | Motion (Framer) | Page transitions |
 
@@ -188,8 +203,8 @@ The Natura theme provides a forest-inspired, premium aesthetic:
 ## 🔒 Security & Reliability
 
 - **Hydration Safe:** Robust state management ensuring DOM safety.
-- **Resilient Delivery:** Map relies on free OpenFreeMap vector tiles over HTTPS (no API key).
-- **CSP Headers:** Defined statically in `next.config.ts`.
+- **Resilient Delivery:** Map relies on free Carto raster tiles over HTTPS (no API key); dinosaur imagery is self-hosted WebP.
+- **CSP Headers:** Enforced via `public/_headers` (Cloudflare Pages format) — `next.config.ts` headers are inert under static export.
 - **Zero Server Footprint:** Fully functional statically generated architecture.
 
 ---
@@ -203,6 +218,9 @@ The Natura theme provides a forest-inspired, premium aesthetic:
 - [x] User bookmarks / favorites saving
 - [x] Species population trend charts
 - [x] AR mode for mobile devices
+- [x] Dinosaur era mode with PBDB-backed fossil evidence
+- [x] Geologic timeline on dinosaur profiles
+- [x] About page with verifiable open data sources
 
 > All roadmap targets achieved.
 

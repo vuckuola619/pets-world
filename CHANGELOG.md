@@ -5,6 +5,24 @@ All notable changes to the World Wildlife Atlas are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-08-27
+
+### 🦕 Dinosaur Era Mode & Educational Atlas
+
+#### Added
+- **Dinosaur Era Atlas** — 46 PBDB-sourced taxa with bilingual descriptions, fossil evidence cards linking to verifiable occurrences, and a geologic timeline (Triassic/Jurassic/Cretaceous) on every detail page.
+- **Real paleo-art imagery** — self-hosted WebP variants (128/480/960w) of Wikimedia life restorations for 45/46 taxa, used by photo map markers, popups, and detail heroes (SVG illustration fallback for the rest); image credits displayed on heroes.
+- **About page** (`/about`) — bilingual, with atlas stats and verifiable data sources (PBDB, IUCN, Wikimedia, NASA).
+- **IUCN legend explanations** — hover a status code to learn what it means in plain language (EN/ID).
+- **Natura icon set** — real NASA Blue Marble app icon, full PWA icon set with maskable variants, og-image social card.
+- **Motion polish** — press feedback on frequent controls, era-switch crossfade, theme color glide, favorite heart pop (all reduced-motion aware).
+
+#### Fixed
+- Dead header Search button (now shares state with ⌘K).
+- Offline fallback in the service worker unreachable due to a promise-truthiness bug.
+- Favorites unified into one shared store across map, popup, and mobile panel — previously three disconnected copies that could drop recently added favorites.
+- All pre-existing ESLint errors cleared; CI lint step now runs the real eslint script.
+
 ## [1.1.1] — 2026-04-19
 
 ### 🩹 Hotfix & Image Fetch Update
