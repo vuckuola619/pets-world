@@ -230,6 +230,9 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     const map = mapRef.current?.getMap();
     if (!map) return;
 
+    /* Guard: overlay layers register after the (remote) style finishes loading */
+    if (!map.getLayer("unclustered-point") && !map.getLayer("clusters")) return;
+
     const features = map.queryRenderedFeatures(evt.point, {
       layers: ["unclustered-point"],
     });
