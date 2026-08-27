@@ -118,8 +118,9 @@ async function networkFirst(request) {
 }
 
 /** Returns an offline fallback response */
-function offlineFallback() {
-  return caches.match('/') || new Response(
+async function offlineFallback() {
+  const cached = await caches.match('/');
+  return cached || new Response(
     '<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#666"><div style="text-align:center"><h1>🌍 Offline</h1><p>World Wildlife Atlas is not available offline yet.</p></div></body></html>',
     { headers: { 'Content-Type': 'text/html' } }
   );
