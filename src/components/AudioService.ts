@@ -14,6 +14,12 @@ class AudioService {
 
   private getCtx(): AudioContext {
     if (!this.ctx) this.ctx = new AudioContext()
+    // Browsers create the context suspended unless opened from a user
+    // gesture (e.g. the first hover sound); without a resume all
+    // synthesized sounds stay silent for the whole session.
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume().catch(() => {})
+    }
     return this.ctx
   }
 
@@ -41,6 +47,7 @@ class AudioService {
   /** Creates a gain node scaled by current volume */
   private createGain(): [GainNode, AudioContext] {
     const ctx = this.getCtx()
+      if (ctx.state !== 'running') return
     const gain = ctx.createGain()
     return [gain, ctx]
   }
@@ -49,6 +56,7 @@ class AudioService {
     if (this._muted) return
     try {
       const ctx = this.getCtx()
+      if (ctx.state !== 'running') return
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.connect(gain)
@@ -69,6 +77,7 @@ class AudioService {
     if (this._muted) return
     try {
       const ctx = this.getCtx()
+      if (ctx.state !== 'running') return
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.connect(gain)
@@ -88,6 +97,7 @@ class AudioService {
     if (this._muted) return
     try {
       const ctx = this.getCtx()
+      if (ctx.state !== 'running') return
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.connect(gain)
@@ -108,6 +118,7 @@ class AudioService {
     if (this._muted) return
     try {
       const ctx = this.getCtx()
+      if (ctx.state !== 'running') return
       const sounds: Record<string, { freq: number; type: OscillatorType; duration: number; sweep: number; harmonics?: number[] }> = {
         'Mammal': { freq: 200, type: 'sawtooth', duration: 0.5, sweep: 400, harmonics: [1, 0.5, 0.25] },
         'Bird': { freq: 1200, type: 'sine', duration: 0.4, sweep: 2400, harmonics: [1, 0.8, 0.3] },
