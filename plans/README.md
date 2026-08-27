@@ -31,9 +31,9 @@ weighted). The bundles below were offered and remain unplanned:
 |------|-------|----------|--------|------------|--------|
 | 001  | PWA offline fallback reachable | P1 | S | — | DONE |
 | 002  | Favorites shared store (data-loss fix) | P1 | S–M | — | DONE |
-| 003  | CI lint command + tooling honesty | P1 | S | — | TODO |
-| 004  | i18n id/en parity guard | P2 | S | — | TODO |
-| 005  | README/CHANGELOG refresh (v1.2.0) | P2 | S | — | TODO |
+| 003  | CI lint command + tooling honesty | P1 | S | — | DONE |
+| 004  | i18n id/en parity guard | P2 | S | — | DONE |
+| 005  | README/CHANGELOG refresh (v1.2.0) | P2 | S | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
