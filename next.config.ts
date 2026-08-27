@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
-              "connect-src 'self' https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://basemaps.cartocdn.com https://api.api-ninjas.com https://*.wikipedia.org https://*.wikimedia.org",
+              "connect-src 'self' https://tile.openstreetmap.org https://tiles.openfreemap.org https://api.api-ninjas.com https://*.wikipedia.org https://*.wikimedia.org",
               "worker-src 'self' blob:",
               "frame-src 'none'",
               "object-src 'none'",

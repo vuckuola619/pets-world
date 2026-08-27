@@ -165,7 +165,7 @@ src/
 | Framework | Next.js 16 (App Router) | RSC, file-based routing, static export |
 | UI | React 19 | Component architecture |
 | Styling | Tailwind CSS 4 + Custom CSS | Natura design system |
-| Map | MapLibre GL / Carto | Reliable vendor-agnostic raster maps |
+| Map | MapLibre GL / OpenFreeMap | Free keyless vector maps (no API key) |
 | State | Zustand | Lightweight resilient global state |
 | Storage | IndexedDB / LocalStorage | Offline favorites and sync |
 | Testing | Vitest + RTL | Behavior and component testing |
@@ -188,7 +188,7 @@ The Natura theme provides a forest-inspired, premium aesthetic:
 ## 🔒 Security & Reliability
 
 - **Hydration Safe:** Robust state management ensuring DOM safety.
-- **Resilient Delivery:** Map relies on secure Carto Voyager tiles over HTTPS.
+- **Resilient Delivery:** Map relies on free OpenFreeMap vector tiles over HTTPS (no API key).
 - **CSP Headers:** Defined statically in `next.config.ts`.
 - **Zero Server Footprint:** Fully functional statically generated architecture.
 

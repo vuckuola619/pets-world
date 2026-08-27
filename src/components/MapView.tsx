@@ -31,60 +31,23 @@ import Image from "next/image";
 import Link from "next/link";
 import { CONTINENT_COLORS } from "../lib/regions";
 
-/** Self-contained map styles using reliable OSM-based raster tiles (no CDN JSON dependency) */
-function makeRasterStyle(name: string, tiles: string[], attribution: string) {
-  return {
-    version: 8 as const,
-    name,
-    sources: {
-      basemap: {
-        type: "raster" as const,
-        tiles,
-        tileSize: 256,
-        attribution,
-      },
-    },
-    layers: [
-      {
-        id: "basemap-tiles",
-        type: "raster" as const,
-        source: "basemap",
-        minzoom: 0,
-        maxzoom: 19,
-      },
-    ],
-  };
-}
+/** Keyless OpenFreeMap vector styles (https://openfreemap.org) — free with no
+ *  API key or usage cap; the hosted style ships glyphs for cluster labels. */
+const OFM_BASE = "https://tiles.openfreemap.org/styles";
 
-/** All styles use Carto raster tiles (same reliable CDN). Dark mode uses
- *  Carto's real dark basemap; Minimal (satellite look) stays a CSS filter
- *  on the voyager canvas. */
-const VOYAGER_TILES = [
-  "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-  "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-  "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-];
-const DARK_TILES = [
-  "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-  "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-  "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-];
-const VOYAGER_ATTR = "&copy; OSM contributors &copy; CARTO";
-
-const BASE_STYLE = makeRasterStyle("Carto Voyager", VOYAGER_TILES, VOYAGER_ATTR);
-const DARK_STYLE = makeRasterStyle("Carto Dark", DARK_TILES, VOYAGER_ATTR);
-
-const STYLES: Record<MapStyleName, typeof BASE_STYLE> = {
-  voyager: BASE_STYLE,
-  dark: DARK_STYLE,
-  satellite: BASE_STYLE,
+const STYLES: Record<MapStyleName, string> = {
+  voyager: `${OFM_BASE}/liberty`,
+  dark: `${OFM_BASE}/positron`,
+  satellite: `${OFM_BASE}/positron`,
 };
 
-/** CSS filter applied to the .maplibregl-canvas for each style */
+/** CSS filter applied to the .maplibregl-canvas for each style.
+ *  OpenFreeMap has no native dark style: Dark mode inverts Positron's canvas,
+ *  Minimal (satellite key) desaturates it. */
 const MAP_CANVAS_FILTERS: Record<MapStyleName, string> = {
   voyager: "none",
-  dark: "none",
-  satellite: "grayscale(0.85) brightness(1.05) contrast(0.9)",
+  dark: "invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85)",
+  satellite: "grayscale(1) brightness(1.02) contrast(0.92)",
 };
 
 interface ViewState {
@@ -236,7 +199,8 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     layout: {
       "text-field": "{point_count_abbreviated}",
       "text-size": 12,
-      "text-font": ["Open Sans Regular"],
+      // OpenFreeMap serves Noto fonts, not Open Sans
+      "text-font": ["Noto Sans Regular"],
     },
     paint: {
       "text-color": "#fff",
@@ -340,8 +304,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
           updateMarkerScreenPos(filtered);
         }}
         style={{ width: "100%", height: "100%" }}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        mapStyle={STYLES[mapStyle] as any}
+        mapStyle={STYLES[mapStyle]}
         onClick={onMapClick}
         onMouseMove={onMapMouseMove}
       >

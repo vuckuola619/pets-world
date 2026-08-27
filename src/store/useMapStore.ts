@@ -46,6 +46,9 @@ interface MapStore {
   removeCompare: (id: string) => void
   clearCompare: () => void
   setCompareOpen: (open: boolean) => void
+  favorites: string[]
+  toggleFavorite: (id: string) => void
+  clearFavorites: () => void
   setShowFavoritesOnly: (show: boolean) => void
   setArOpen: (open: boolean) => void
 }
@@ -58,6 +61,31 @@ function getSavedTheme(): ThemeMode {
   const saved = localStorage.getItem('wildlife-theme')
   if (saved === 'dark' || saved === 'light' || saved === 'system') return saved
   return 'light'
+}
+
+const FAVORITES_KEY = 'wildlife-favorites'
+
+/** Reads favorite ids from localStorage (safe for SSR) */
+function readFavorites(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(FAVORITES_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/** Writes favorite ids to localStorage */
+function writeFavorites(ids: string[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids))
+  } catch {
+    // localStorage full or unavailable — silently fail
+  }
 }
 
 /** Global map state store backed by Zustand */
@@ -75,6 +103,7 @@ export const useMapStore = create<MapStore>((set) => ({
   atlasMode: 'wildlife',
   compareIds: [],
   compareOpen: false,
+  favorites: readFavorites(),
   showFavoritesOnly: false,
   arOpen: false,
   setSelectedId: (id) => set({ selectedId: id }),
@@ -117,6 +146,18 @@ export const useMapStore = create<MapStore>((set) => ({
     set((s) => ({ compareIds: s.compareIds.filter((x) => x !== id) })),
   clearCompare: () => set({ compareIds: [], compareOpen: false }),
   setCompareOpen: (open) => set({ compareOpen: open }),
+  toggleFavorite: (id) =>
+    set((s) => {
+      const next = s.favorites.includes(id)
+        ? s.favorites.filter((x) => x !== id)
+        : [...s.favorites, id]
+      writeFavorites(next)
+      return { favorites: next }
+    }),
+  clearFavorites: () => {
+    writeFavorites([])
+    set({ favorites: [] })
+  },
   setShowFavoritesOnly: (show) => set({ showFavoritesOnly: show }),
   setArOpen: (open) => set({ arOpen: open }),
 }))
