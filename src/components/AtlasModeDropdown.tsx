@@ -97,7 +97,11 @@ export default function AtlasModeDropdown({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={heading}
-        className="press -mx-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1 text-left transition-colors duration-200 hover:bg-accent"
+        className={`press flex items-center gap-2 rounded-lg border px-2 py-1 text-left transition-colors duration-200 ${
+          open
+            ? 'border-primary/40 bg-accent/60 shadow-sm'
+            : 'border-border bg-accent/30 hover:border-primary/30 hover:bg-accent/60'
+        }`}
       >
         <div
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white ${
