@@ -8,6 +8,10 @@ const translations = {
     search: 'Cari negara atau hewan...',
     all: 'Semua',
     random: 'Acak',
+    atlasModes: {
+      wildlife: 'Satwa Liar',
+      prehistoric: 'Era Purba',
+    },
     regions: {
       'All': 'Semua',
       'Asia': 'Asia',
@@ -200,6 +204,10 @@ const translations = {
     search: 'Search country or animal...',
     all: 'All',
     random: 'Random',
+    atlasModes: {
+      wildlife: 'Wildlife',
+      prehistoric: 'Era Purba',
+    },
     regions: {
       'All': 'All',
       'Asia': 'Asia',

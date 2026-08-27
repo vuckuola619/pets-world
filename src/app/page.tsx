@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { useState, useCallback } from "react";
-import { Shuffle, Globe, Search, Leaf, Sun, Moon, Monitor, Volume2, VolumeX, Camera, Bone } from "lucide-react";
+import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera } from "lucide-react";
 import { t } from "../lib/i18n";
 import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
@@ -12,6 +12,7 @@ import { useTheme } from "../hooks/useTheme";
 import { audioService } from "../components/AudioService";
 import Sidebar from "../components/Sidebar";
 import MobileSidebar from "../components/MobileSidebar";
+import AtlasModeDropdown from "../components/AtlasModeDropdown";
 import MapView from "../components/MapView";
 import AnimalSearch from "../components/AnimalSearch";
 import ComparePanel from "../components/ComparePanel";
@@ -31,7 +32,7 @@ function ThemeIcon({ theme }: { theme: string }): React.JSX.Element {
 export default function Home(): React.JSX.Element {
   const [viewState, setViewState] = useState(DEFAULT_VIEW);
   const filtered = useFilteredAnimals();
-  const { atlasMode, setAtlasMode, setSelectedId, setMobileOpen, locale, setLocale, arOpen, setArOpen } = useMapStore();
+  const { atlasMode, setSelectedId, setMobileOpen, locale, setLocale, arOpen, setArOpen } = useMapStore();
   const { records, regions } = useAtlasData();
   const { theme, toggleTheme } = useTheme();
   const isPrehistoric = atlasMode === 'prehistoric';
@@ -64,41 +65,12 @@ export default function Home(): React.JSX.Element {
       <header className="glass-header flex h-14 shrink-0 items-center gap-2 px-4 z-20">
         <MobileSidebar />
 
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-natura-gradient text-white">
-            <Leaf size={16} className="drop-shadow-sm" />
-          </div>
-          <div className="hidden sm:flex flex-col">
-            <span className="text-sm font-semibold font-[var(--font-heading)] text-foreground leading-tight">
-              {isPrehistoric ? 'Era Purba Atlas' : t(locale).title}
-            </span>
-            <span className="text-[10px] text-muted-foreground leading-tight">
-              {filtered.length} {isPrehistoric ? 'dinosaurs' : t(locale).countries} · {regions.length} Regions
-            </span>
-          </div>
-          <span className="sm:hidden text-sm font-semibold text-foreground">
-            {isPrehistoric ? 'Era Purba' : t(locale).title}
-          </span>
-        </div>
+        {/* Logo / atlas mode switcher */}
+        <AtlasModeDropdown count={filtered.length} regionCount={regions.length} />
 
         <div className="flex-1" />
 
         {/* Action buttons */}
-        <button
-          onClick={() => setAtlasMode(isPrehistoric ? 'wildlife' : 'prehistoric')}
-          className={`flex items-center gap-1.5 press px-2.5 py-1.5 text-sm rounded-lg transition-all duration-200 ${
-            isPrehistoric
-              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-          }`}
-          title={isPrehistoric ? 'Switch to wildlife atlas' : 'Switch to Era Purba'}
-          aria-label={isPrehistoric ? 'Switch to wildlife atlas' : 'Switch to dinosaur era atlas'}
-        >
-          {isPrehistoric ? <Bone size={15} /> : <Leaf size={15} />}
-          <span className="hidden sm:inline text-xs font-medium">{isPrehistoric ? 'Era Purba' : 'Wildlife'}</span>
-        </button>
-
         <button
           onClick={() => useMapStore.getState().setSearchOpen(true)}
           className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
