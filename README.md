@@ -90,15 +90,12 @@ npm install
 
 ### Environment Variables
 
-Create a `.env.local` file in the project root:
+The optional API-Ninjas enrichment is served through a same-origin Cloudflare Pages Function (`functions/api/ninjas.ts`). Set the key **once, server-side** — it never reaches the browser:
 
-```env
-# Optional: API-Ninjas key for extended species data
-# Get a free key at https://api-ninjas.com
-NEXT_PUBLIC_API_NINJAS_KEY=your_api_key_here
-```
+1. Cloudflare Pages → your project → **Settings → Environment variables**
+2. Add `API_NINJAS_KEY` = your key (get a free one at [api-ninjas.com](https://api-ninjas.com))
 
-> **Note:** The app works fully without the API key. The key enables extended data (top speed, gestation period, threats) on detail pages.
+> **Note:** The app works fully without the key. It enables extended data (top speed, gestation period, threats) on wildlife detail pages. No local `.env` needed for it.
 
 ### Development
 

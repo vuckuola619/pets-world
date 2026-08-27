@@ -45,13 +45,19 @@ export interface ApiNinjasAnimal {
   };
 }
 
-const API_BASE = 'https://api.api-ninjas.com/v1/animals';
-const API_KEY = process.env.NEXT_PUBLIC_API_NINJAS_KEY ?? '';
+const PROXY_URL = '/api/ninjas';
 const CACHE_PREFIX = 'api-ninjas-animal:';
 
-/** Fetches animal details from API-Ninjas with session caching */
+/**
+ * Fetches animal details from API-Ninjas with session caching.
+ * Requests go through the same-origin Cloudflare Pages Function
+ * (`functions/api/ninjas.ts`), which holds the real key server-side —
+ * no credential ships in the client bundle. Without the function
+ * (local `next dev`, or a deploy without it) the fetch 404s and this
+ * returns null, which the UI already treats as "no extended data".
+ */
 export async function fetchAnimalDetails(animalName: string): Promise<ApiNinjasAnimal | null> {
-  if (!API_KEY || !animalName) return null;
+  if (!animalName) return null;
 
   // Check sessionStorage cache first
   const cacheKey = `${CACHE_PREFIX}${animalName.toLowerCase()}`;
@@ -64,21 +70,15 @@ export async function fetchAnimalDetails(animalName: string): Promise<ApiNinjasA
 
   try {
     const res = await fetch(
-      `${API_BASE}?name=${encodeURIComponent(animalName)}`,
+      `${PROXY_URL}?name=${encodeURIComponent(animalName)}`,
       {
-        headers: { 'X-Api-Key': API_KEY },
         signal: AbortSignal.timeout(8000),
       }
     );
     if (!res.ok) return null;
 
-    const data: ApiNinjasAnimal[] = await res.json();
-    if (!data.length) return null;
-
-    // Find the best match (exact name match first, then first result)
-    const best = data.find(
-      (d) => d.name.toLowerCase() === animalName.toLowerCase()
-    ) ?? data[0];
+    const best = (await res.json()) as ApiNinjasAnimal | null;
+    if (!best) return null;
 
     // Cache in sessionStorage
     try {
