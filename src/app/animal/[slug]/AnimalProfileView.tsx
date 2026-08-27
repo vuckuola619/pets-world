@@ -118,7 +118,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
             <img
               src={isPrehistoric ? localDinoThumb(animal.slug, 960) : animal.images[0].url}
               alt={animal.images[0].alt || animal.commonName}
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">

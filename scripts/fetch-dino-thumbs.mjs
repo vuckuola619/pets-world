@@ -38,26 +38,34 @@ async function wikiOriginalUrl(name) {
 }
 
 /** Fetch first URL that answers OK; honors rate limits patiently
- *  (upload.wikimedia.org throttles bulk clients hard — Retry-After wins). */
+ *  (upload.wikimedia.org throttles bulk clients hard — weserv proxy comes
+ *  first to sidestep it; Retry-After backoff remains as fallback). */
 async function fetchAny(candidates) {
   for (const url of candidates) {
     if (!url) continue
-    for (let attempt = 0; attempt < 8; attempt++) {
+    for (let attempt = 0; attempt < 6; attempt++) {
       try {
         const res = await fetch(url, { headers: { 'User-Agent': UA }, redirect: 'follow' })
         if (res.ok) return Buffer.from(await res.arrayBuffer())
-        const wait = Number(res.headers.get('retry-after')) || [0, 20, 45, 90][Math.min(attempt, 3)] || 120
+        const wait = Number(res.headers.get('retry-after')) || [5, 15, 40][Math.min(attempt, 2)]
         console.log(`  HTTP ${res.status} (try ${attempt + 1}) ${url.slice(-50)} — waiting ${wait}s`)
-        if (res.status !== 429 && res.status < 500) break // permanent for this URL
+        if (res.status !== 429 && res.status < 500 && !(res.status === 400)) break
         await sleep(wait * 1000)
       } catch (e) {
         console.log(`  network error: ${e.message}`)
-        await sleep(15000)
+        await sleep(10000)
       }
     }
     await sleep(1000)
   }
   return null
+}
+
+/** Weserv-served, pre-sized copy of a remote image (public image CDN). */
+function weservCandidate(remoteUrl, width) {
+  if (!remoteUrl) return null
+  const bare = remoteUrl.replace(/^https?:\/\//, '')
+  return `https://images.weserv.nl/?url=${encodeURIComponent(bare)}&w=${width}&fit=inside&output=webp&q=85`
 }
 
 let ok = 0
@@ -73,16 +81,12 @@ for (const [slug, hit] of Object.entries(cache)) {
 
   let buf = null
   const name = sciByName.get(slug)
-  const candidates = [hit.url]
-  if (name) {
-    buf = await fetchAny(candidates)
-    if (!buf) {
-      console.log(`  falling back to Wikipedia original for ${slug}`)
-      const orig = await wikiOriginalUrl(name)
-      buf = orig ? await fetchAny([orig]) : null
-    }
-  } else {
-    buf = await fetchAny(candidates)
+  const candidates = [weservCandidate(hit.url, 1440), hit.url]
+  buf = await fetchAny(candidates)
+  if (!buf && name) {
+    console.log(`  falling back to Wikipedia original for ${slug}`)
+    const orig = await wikiOriginalUrl(name)
+    buf = await fetchAny([weservCandidate(orig, 1440), orig])
   }
 
   if (!buf) {
