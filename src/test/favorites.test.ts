@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 
 // Mock localStorage
 const store: Record<string, string> = {}
@@ -66,5 +66,61 @@ describe('Favorites', () => {
     const parsed = JSON.parse(raw)
     const filtered = parsed.filter((x: unknown): x is string => typeof x === 'string')
     expect(filtered).toEqual(['id-1', 'id-2'])
+  })
+})
+
+describe('shared favorites store', () => {
+  let useMapStore: typeof import('../store/useMapStore').useMapStore
+
+  beforeAll(async () => {
+    ;({ useMapStore } = await import('../store/useMapStore'))
+  })
+
+  beforeEach(() => {
+    localStorageMock.clear()
+    vi.clearAllMocks()
+    useMapStore.setState({ favorites: [] })
+  })
+
+  it('toggle adds and removes through the shared slice and persists', () => {
+    useMapStore.getState().toggleFavorite('komodo-dragon')
+    expect(useMapStore.getState().favorites).toEqual(['komodo-dragon'])
+    expect(JSON.parse(localStorage.getItem('wildlife-favorites')!)).toEqual(['komodo-dragon'])
+
+    useMapStore.getState().toggleFavorite('komodo-dragon')
+    expect(useMapStore.getState().favorites).toEqual([])
+    expect(JSON.parse(localStorage.getItem('wildlife-favorites')!)).toEqual([])
+  })
+
+  it('is visible to every consumer regardless of who toggled (desync regression)', () => {
+    // Simulate two surfaces reading the same store slice.
+    const sidebarView = useMapStore.getState().favorites
+    useMapStore.getState().toggleFavorite('tyrannosaurus-rex')
+    const popupView = useMapStore.getState().favorites
+    expect(popupView).toEqual(['tyrannosaurus-rex'])
+    expect(useMapStore.getState().favorites).toEqual(['tyrannosaurus-rex'])
+    // Old snapshots are immutable copies, never mutated in place.
+    expect(sidebarView).toEqual([])
+  })
+
+  it('a stale snapshot can never wipe freshly added favorites (data-loss regression)', () => {
+    useMapStore.getState().toggleFavorite('first')
+    const fresh = [...useMapStore.getState().favorites]
+
+    // Toggle something else afterwards — the first favorite must survive.
+    useMapStore.getState().toggleFavorite('second')
+    expect(useMapStore.getState().favorites).toEqual(['first', 'second'])
+    expect(fresh).toEqual(['first']) // earlier snapshot untouched
+    expect(JSON.parse(localStorage.getItem('wildlife-favorites')!)).toEqual([
+      'first',
+      'second',
+    ])
+  })
+
+  it('clear empties both memory and storage', () => {
+    useMapStore.getState().toggleFavorite('one')
+    useMapStore.getState().clearFavorites()
+    expect(useMapStore.getState().favorites).toEqual([])
+    expect(localStorage.getItem('wildlife-favorites')).toBe('[]')
   })
 })
