@@ -127,23 +127,6 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     return markerScreenPos[id] ?? null;
   }
 
-  function getPopupPosition(
-    screenPos: { x: number; y: number },
-    pw: number, ph: number,
-    cw: number, ch: number,
-    offset = 20
-  ) {
-    // Center popup on marker, then clamp to viewport
-    let left = screenPos.x - pw / 2;
-    let top = screenPos.y - ph / 2 - 30; // slightly above center
-
-    // Clamp to viewport
-    left = Math.max(8, Math.min(left, cw - pw - 8));
-    top = Math.max(8, Math.min(top, ch - ph - 8));
-
-    return { left, top };
-  }
-
   const playSound = useCallback(() => {
     if (!selected) return;
     setIsPlaying(true);

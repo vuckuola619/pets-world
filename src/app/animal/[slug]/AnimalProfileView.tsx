@@ -1,11 +1,13 @@
 'use client';
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import Link from 'next/link'
+import { Heart, Share2 } from 'lucide-react'
 import { IUCN_CONFIG, STATUS_CODE } from '@/lib/iucn'
 import AnimalDetailsClient from './AnimalDetailsClient'
 import PopulationChart from '@/components/PopulationChart'
 import GeologicTimeBar from '@/components/GeologicTimeBar'
 import { localDinoThumb } from '@/lib/wikiImages'
+import { useFavorites } from '@/hooks/useFavorites'
 import { useMapStore } from "@/store/useMapStore";
 import {
   type AtlasProfile,
@@ -41,9 +43,31 @@ function StatCard({ icon, label, value }: { icon: string; label: string; value: 
 export default function AnimalProfileView({ animal }: { animal: AtlasProfile }): React.JSX.Element {
   const locale = useMapStore(s => s.locale);
   const isPrehistoric = animal.atlasMode === 'prehistoric';
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const [copied, setCopied] = useState(false);
+  const tr = t(locale);
+  const isFav = isFavorite(animal.slug);
 
   // 1. Description Translation
   const description = getProfileDescription(animal, locale);
+
+  const handleShare = useCallback(async () => {
+    const url = window.location.href;
+    const data: ShareData = {
+      title: `${animal.commonName} — World Wildlife Atlas`,
+      text: description.slice(0, 140),
+      url,
+    };
+    if (typeof navigator.share === 'function') {
+      try { await navigator.share(data); } catch { /* user cancelled */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  }, [animal.commonName, description]);
 
   // 2. Diet Translation
   const dietKey = animal.diet;
@@ -179,6 +203,30 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
             <span className="px-3 py-1 rounded-full text-sm bg-foreground/10 text-foreground/80 backdrop-blur-sm border border-foreground/10">
               {diet}
             </span>
+
+            {/* Favorite + share (right-aligned on wide screens) */}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => toggleFavorite(animal.slug)}
+                className={`press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border backdrop-blur-sm transition-colors ${
+                  isFav
+                    ? 'bg-red-500/15 text-red-500 border-red-500/30'
+                    : 'bg-background/50 text-foreground/80 border-foreground/10 hover:bg-background'
+                }`}
+                aria-label={isFav ? tr.favorites.removeFromFavorites : tr.favorites.addToFavorites}
+              >
+                <Heart size={15} className={isFav ? 'heart-pop' : ''} fill={isFav ? 'currentColor' : 'none'} />
+                {isFav ? tr.favorites.removeFromFavorites : tr.favorites.addToFavorites}
+              </button>
+              <button
+                onClick={handleShare}
+                className="press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-background/50 text-foreground/80 border border-foreground/10 backdrop-blur-sm hover:bg-background transition-colors"
+                aria-label={tr.favorites.share}
+              >
+                <Share2 size={15} aria-hidden />
+                {copied ? tr.favorites.shareCopied : tr.favorites.share}
+              </button>
+            </div>
           </div>
         </div>
       </div>

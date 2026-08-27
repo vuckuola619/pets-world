@@ -80,6 +80,8 @@ export default function AROverlay({ onClose }: AROverlayProps): React.JSX.Elemen
 
   // Get device orientation (compass heading)
   useEffect(() => {
+    let cancelled = false;
+
     function handleOrientation(e: DeviceOrientationEvent) {
       // Alpha is the compass heading on mobile devices
       if (e.alpha !== null) {
@@ -92,16 +94,21 @@ export default function AROverlay({ onClose }: AROverlayProps): React.JSX.Elemen
       (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> })
         .requestPermission()
         .then((perm) => {
-          if (perm === "granted") {
+          // The overlay may have unmounted while the iOS dialog was open —
+          // attaching after cleanup would leak the listener for the session.
+          if (!cancelled && perm === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          // Permission denied: compass stays unavailable; the map still works.
+        });
     } else {
       window.addEventListener("deviceorientation", handleOrientation);
     }
 
     return () => {
+      cancelled = true;
       window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, []);

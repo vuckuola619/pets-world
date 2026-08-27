@@ -141,6 +141,8 @@ export const translations = {
       removeFromFavorites: 'Hapus dari Favorit',
       showFavorites: 'Tampilkan Favorit',
       showAll: 'Tampilkan Semua',
+      share: 'Bagikan',
+      shareCopied: 'Tautan tersalin ✓',
     },
     offline: {
       offline: 'Anda sedang offline',
@@ -337,6 +339,8 @@ export const translations = {
       removeFromFavorites: 'Remove from Favorites',
       showFavorites: 'Show Favorites',
       showAll: 'Show All',
+      share: 'Share',
+      shareCopied: 'Link copied ✓',
     },
     offline: {
       offline: 'You are offline',

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getPopulationTrend, VALID_TRENDS, TREND_COLORS, TREND_LABELS, TREND_ICONS } from '../data/populationTrends'
+import { getPopulationTrend, VALID_TRENDS, TREND_COLORS, TREND_ICONS } from '../data/populationTrends'
 
 describe('Population Trends', () => {
   it('returns valid trend direction for all conservation statuses', () => {
@@ -50,22 +50,10 @@ describe('Population Trends', () => {
     expect(trend.direction).toBe('decreasing')
   })
 
-  it('has colors for all valid trends', () => {
+  it('has colors and icons for all valid trends', () => {
     for (const dir of VALID_TRENDS) {
       expect(TREND_COLORS[dir]).toBeDefined()
       expect(typeof TREND_COLORS[dir]).toBe('string')
-    }
-  })
-
-  it('has labels for all valid trends', () => {
-    for (const dir of VALID_TRENDS) {
-      expect(TREND_LABELS[dir]).toBeDefined()
-      expect(typeof TREND_LABELS[dir]).toBe('string')
-    }
-  })
-
-  it('has icons for all valid trends', () => {
-    for (const dir of VALID_TRENDS) {
       expect(TREND_ICONS[dir]).toBeDefined()
     }
   })

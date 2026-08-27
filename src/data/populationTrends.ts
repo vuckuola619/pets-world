@@ -16,6 +16,24 @@ export const TREND_COLORS: Record<TrendDirection, string> = {
   unknown: '#9ca3af',
 }
 
+/** Population trend direction for each species */
+export type TrendDirection = 'increasing' | 'stable' | 'decreasing' | 'unknown'
+
+/** Population trend data for a species */
+export interface PopulationTrend {
+  direction: TrendDirection
+  /** Simulated data points (relative scale 0-100) for sparkline */
+  dataPoints: number[]
+}
+
+/** Trend color mapping */
+export const TREND_COLORS: Record<TrendDirection, string> = {
+  increasing: '#22c55e',
+  stable: '#eab308',
+  decreasing: '#ef4444',
+  unknown: '#9ca3af',
+}
+
 /** Trend labels */
 export const TREND_LABELS: Record<TrendDirection, string> = {
   increasing: 'Increasing',
