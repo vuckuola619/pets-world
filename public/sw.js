@@ -78,10 +78,25 @@ async function cacheFirst(request) {
     if (response.ok) {
       const cache = await caches.open(STATIC_CACHE);
       cache.put(request, response.clone());
+      await trimCache(STATIC_CACHE, MAX_STATIC_ENTRIES);
     }
     return response;
   } catch {
     return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+  }
+}
+
+/** Cap on entries in the runtime static cache. Without it every map tile
+ *  ever seen (each a .png URL) accumulated forever. */
+const MAX_STATIC_ENTRIES = 400;
+
+/** Keeps a cache at `max` entries, deleting the oldest inserts first. */
+async function trimCache(cacheName, max) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length <= max) return;
+  for (let i = 0; i < keys.length - max; i++) {
+    await cache.delete(keys[i]);
   }
 }
 
@@ -93,7 +108,7 @@ async function staleWhileRevalidate(request) {
   const fetchPromise = fetch(request)
     .then((response) => {
       if (response.ok) {
-        cache.put(request, response.clone());
+        cache.put(request, response.clone()).then(() => trimCache(CACHE_NAME, 80));
       }
       return response;
     })
