@@ -47,6 +47,16 @@ describe('useMapStore', () => {
     expect(useMapStore.getState().atlasMode).toBe('wildlife')
   })
 
+  it('defaults to the minimal map style', () => {
+    expect(useMapStore.getInitialState().mapStyle).toBe('satellite')
+  })
+
+  it('keeps the minimal style for the light theme', () => {
+    useMapStore.getState().setMapStyle('dark')
+    useMapStore.getState().setTheme('light')
+    expect(useMapStore.getState().mapStyle).toBe('satellite')
+  })
+
   it('switches atlas mode and clears stale map state', () => {
     useMapStore.getState().setSelectedId('id')
     useMapStore.getState().setHoveredId('cn')
