@@ -318,10 +318,11 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
           <Layer {...unclusteredPointLayer} />
         </Source>
 
-        {/* Markers: paleo-art thumbnails in prehistoric mode (the product),
-            emoji in wildlife mode only once clusters dissolve (zoom >= 7.5)
-            so each point is rendered by exactly one pipeline. */}
-        {(isPrehistoric || viewState.zoom >= 7.5) && filtered.map((c) => {
+        {/* Markers: paleo-art thumbnails in prehistoric mode, emoji in
+            wildlife mode. Both render at every zoom — at low zoom the canvas
+            cluster bubbles stay visible underneath as the density aggregate;
+            do not gate these on zoom, the world view must show species. */}
+        {filtered.map((c) => {
           const photoUrl =
             isPrehistoric && c.imageKind === "photo" && c.imageUrl
               ? localDinoThumb(c.slug, 128)
