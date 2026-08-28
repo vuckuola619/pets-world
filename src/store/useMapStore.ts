@@ -95,7 +95,7 @@ export const useMapStore = create<MapStore>((set) => ({
   sidebarHoveredId: null,
   searchQuery: '',
   activeRegion: 'All',
-  mapStyle: 'voyager',
+  mapStyle: 'satellite',
   searchOpen: false,
   mobileOpen: false,
   locale: 'en' as Locale,
@@ -119,8 +119,7 @@ export const useMapStore = create<MapStore>((set) => ({
   setTheme: (t) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('wildlife-theme', t)
-      const isDark = t === 'dark' || (t === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)')?.matches)
-      set({ theme: t, mapStyle: isDark ? 'satellite' : 'voyager' })
+      set({ theme: t, mapStyle: 'satellite' })
     } else {
       set({ theme: t })
     }

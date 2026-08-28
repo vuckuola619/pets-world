@@ -241,7 +241,21 @@
 }
 
 /* ─── Pet Markers ────────────────────────── */
+/* Circular species badge — same structure as .dino-photo-marker, ring in the
+   wildlife emerald instead of the prehistoric amber. */
 .pet-marker {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  border-radius: 9999px;
+  border: 2px solid var(--natura-emerald);
+  background: var(--natura-surface);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.25);
   animation: pet-bounce 2s ease-in-out infinite;
   cursor: pointer;
   transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 200ms ease;

@@ -333,7 +333,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
               onClick={() => onMarkerClick(c)}
               onMouseEnter={() => onMarkerHover(c)}
               onMouseLeave={() => setHoveredId(null)}
-              className={`pet-marker text-2xl md:text-3xl ${
+              className={`pet-marker ${
                 sidebarHoveredId === c.id ? "pet-marker-highlighted" : ""
               } ${selectedId === c.id ? "!scale-150" : ""} ${photoUrl ? "dino-photo-marker" : ""}`}
               data-continent={c.region}
