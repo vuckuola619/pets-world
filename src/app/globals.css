@@ -46,6 +46,18 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ─── Motion vocabulary ────────────────────────── */
+/* Shared durations and easings. JS motion (motion/react) mirrors these in
+   transitions — change both sides together. */
+:root {
+  --ease-out-expo: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-fast: 150ms;
+  --duration-med: 250ms;
+  --duration-slow: 400ms;
+}
+
 /* ─── Natura Light Theme ────────────────────────── */
 :root {
   --background: oklch(0.985 0.002 120);
@@ -416,6 +428,14 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: var(--natura-emerald);
 }
+/* Hidden horizontal scrollbar (header on narrow phones still scrolls) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 
 /* ─── Press feedback ────────────────────────── */
 /* Add .press to any tappable control: subtle shrink while held. Fast and
@@ -434,7 +454,34 @@
   100% { transform: scale(1); }
 }
 .heart-pop {
-  animation: heart-pop 220ms ease-out;
+  animation: heart-pop 220ms var(--ease-spring);
+}
+
+/* One-shot expanding ring around a control (favorite feedback). Render a
+   span.heart-ring inside the button; it animates once and fades. */
+@keyframes ring-pulse {
+  0% { transform: scale(0.6); opacity: 0.7; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.heart-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 2px solid var(--natura-coral);
+  animation: ring-pulse 400ms var(--ease-out-expo) forwards;
+  pointer-events: none;
+}
+
+/* ─── Wrong-answer shake ────────────────────────── */
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+.animate-shake {
+  animation: shake-x 320ms ease-out;
 }
 
 /* ─── Theme crossfade ────────────────────────── */
@@ -472,10 +519,15 @@
   .animate-fade-in-up,
   .animate-fade-in-scale,
   .animate-slide-in-right,
+  .animate-shake,
+  .heart-ring,
   .skeleton-shimmer,
   .bg-natura-gradient {
     animation: none;
     opacity: 1;
+  }
+  .heart-ring {
+    display: none;
   }
 }
 

@@ -1,8 +1,11 @@
 "use client"
 import React from 'react';
 
-import { useState, useCallback } from "react";
-import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera } from "lucide-react";
+import { useState, useCallback, useSyncExternalStore } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import dynamic from "next/dynamic";
+import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera, Gamepad2 } from "lucide-react";
+import Link from "next/link";
 import { t } from "../lib/i18n";
 import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
@@ -13,24 +16,47 @@ import { audioService } from "../components/AudioService";
 import Sidebar from "../components/Sidebar";
 import MobileSidebar from "../components/MobileSidebar";
 import AtlasModeDropdown from "../components/AtlasModeDropdown";
-import MapView from "../components/MapView";
+import MapSkeleton from "../components/MapSkeleton";
 import AnimalSearch from "../components/AnimalSearch";
-import ComparePanel from "../components/ComparePanel";
+import ComparePanel, { CompareModal } from "../components/ComparePanel";
 import OfflineIndicator from "../components/OfflineIndicator";
 import AROverlay from "../components/AROverlay";
 
 const DEFAULT_VIEW = { longitude: 20, latitude: 20, zoom: 2 };
 
-/** Theme icon component */
+/** maplibre-gl is heavy — load the map chunk only when the home page mounts */
+const MapView = dynamic(() => import("../components/MapView"), {
+  ssr: false,
+  loading: () => <MapSkeleton />,
+});
+
+/** Theme icon that rotates/crossfades between sun, moon, and monitor */
 function ThemeIcon({ theme }: { theme: string }): React.JSX.Element {
-  if (theme === 'dark') return <Moon size={15} />;
-  if (theme === 'system') return <Monitor size={15} />;
-  return <Sun size={15} />;
+  const reduceMotion = useReducedMotion();
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={theme}
+        className="flex"
+        initial={reduceMotion ? false : { rotate: -70, opacity: 0, scale: 0.7 }}
+        animate={{ rotate: 0, opacity: 1, scale: 1 }}
+        exit={reduceMotion ? { opacity: 0 } : { rotate: 70, opacity: 0, scale: 0.7 }}
+        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+      >
+        {theme === 'dark' ? <Moon size={15} /> : theme === 'system' ? <Monitor size={15} /> : <Sun size={15} />}
+      </motion.span>
+    </AnimatePresence>
+  );
 }
 
 /** Home page with map, sidebar, and controls */
 export default function Home(): React.JSX.Element {
   const [viewState, setViewState] = useState(DEFAULT_VIEW);
+  const muted = useSyncExternalStore(
+    (cb) => audioService.subscribeMute(cb),
+    () => audioService.isMuted(),
+    () => false,
+  );
   const filtered = useFilteredAnimals();
   const { atlasMode, setSelectedId, setMobileOpen, locale, setLocale, arOpen, setArOpen } = useMapStore();
   const { records, regions } = useAtlasData();
@@ -61,12 +87,17 @@ export default function Home(): React.JSX.Element {
 
   return (
     <div className={`flex h-screen w-screen flex-col overflow-hidden ${isPrehistoric ? 'prehistoric-atlas' : ''}`} style={{ background: 'var(--natura-surface)' }}>
+      <h1 className="sr-only">{t(locale).title}</h1>
       {/* ─── Premium Header ─── */}
-      <header className="glass-header flex h-14 shrink-0 items-center gap-2 px-4 z-20">
+      {/* On narrow phones the row scrolls horizontally (scrollbar hidden)
+          instead of clipping the last controls. */}
+      <header className="glass-header flex h-14 shrink-0 items-center gap-2 px-4 z-20 overflow-x-auto scrollbar-none [&>*]:shrink-0">
         <MobileSidebar />
 
         {/* Logo / atlas mode switcher */}
-        <AtlasModeDropdown count={filtered.length} regionCount={regions.length} />
+        <div className="shrink-0">
+          <AtlasModeDropdown count={filtered.length} regionCount={regions.length} />
+        </div>
 
         <div className="flex-1" />
 
@@ -90,14 +121,25 @@ export default function Home(): React.JSX.Element {
           <ThemeIcon theme={theme} />
         </button>
 
-        {/* Audio mute toggle */}
+        {/* Audio mute toggle (desktop/tablet — the mobile header is full) */}
         <button
           onClick={() => audioService.toggleMute()}
-          className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+          className="hidden sm:flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
           title="Toggle sound"
-          aria-label={audioService.isMuted() ? 'Unmute sounds' : 'Mute sounds'}
+          aria-label={muted ? 'Unmute sounds' : 'Mute sounds'}
         >
-          {audioService.isMuted() ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={muted ? 'muted' : 'sound'}
+              className="flex"
+              initial={false}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.6, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            </motion.span>
+          </AnimatePresence>
         </button>
 
         {/* Locale toggle */}
@@ -122,6 +164,17 @@ export default function Home(): React.JSX.Element {
           </button>
         )}
 
+        {/* Quiz mode (mobile gets a roomier entry inside the species sheet) */}
+        <Link
+          href="/quiz"
+          className="hidden sm:flex items-center gap-1.5 press rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-foreground transition-all duration-200 hover:shadow-md active:scale-95"
+          title={t(locale).quiz.title}
+          aria-label={t(locale).quiz.title}
+        >
+          <Gamepad2 size={13} aria-hidden />
+          <span className="hidden lg:inline">{t(locale).quiz.title}</span>
+        </Link>
+
         {/* Random */}
         <button
           onClick={randomAnimal}
@@ -131,7 +184,7 @@ export default function Home(): React.JSX.Element {
           }}
         >
           <Shuffle size={13} />
-          {t(locale).random}
+          <span className="hidden sm:inline">{t(locale).random}</span>
         </button>
       </header>
 
@@ -139,12 +192,13 @@ export default function Home(): React.JSX.Element {
       <OfflineIndicator />
 
       {/* ─── Main Content ─── */}
-      <div id="main-content" className="flex flex-1 overflow-hidden relative">
+      <main id="main-content" className="flex flex-1 overflow-hidden relative">
         <Sidebar />
         <MapView viewState={viewState} setViewState={setViewState} />
-      </div>
+      </main>
 
       <ComparePanel />
+      <CompareModal />
     </div>
   );
 }

@@ -9,7 +9,7 @@ import React from 'react';
 /* eslint-disable react-hooks/preserve-manual-memoization */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Heart, GitCompareArrows, Volume2, Volume1, BookOpen } from "lucide-react";
+import { GitCompareArrows, Volume2, Volume1, BookOpen } from "lucide-react";
 import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
@@ -25,6 +25,7 @@ import MapControls from "./MapControls";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
 import { translateCountry, getEntryFunFacts } from "../lib/profileText";
 import { useFavorites } from "../hooks/useFavorites";
+import HeartButton from "./HeartButton";
 import MobileDetailPanel from "./MobileDetailPanel";
 import MapSkeleton from "./MapSkeleton";
 import Image from "next/image";
@@ -87,7 +88,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const selected = selectedId ? atlasRecords.find((c) => c.id === selectedId) ?? null : null;
   const hovered = hoveredId ? atlasRecords.find((c) => c.id === hoveredId) ?? null : null;
   const { imageUrl, imageLoading } = useAnimalMedia(selected?.animal ?? null, selected?.wikiUrl, selected?.imageUrl);
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -422,7 +423,9 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
               className="hidden md:block fixed z-20 animate-fade-in-scale"
               style={{ left, top }}
             >
-              <div className="glass-card rounded-2xl shadow-xl p-4 text-sm" style={{ width: CARD_W, maxHeight: 'calc(100vh - 40px)', overflowY: 'auto' }}>
+              {/* Nearly-opaque glass: the card floats over map labels and
+                  markers, so body text needs a solid-enough backdrop */}
+              <div className="glass-card rounded-2xl shadow-xl p-4 text-sm" style={{ width: CARD_W, maxHeight: 'calc(100vh - 40px)', overflowY: 'auto', background: 'color-mix(in srgb, var(--card) 94%, transparent)' }}>
                 {/* Image */}
                 <div
                   className="rounded-xl overflow-hidden mb-3"
@@ -445,23 +448,19 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                   <span>{selected.flag}</span>
                   <span>{translateCountry(selected.country, locale)}</span>
                 </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-2xl">{selected.emoji}</span>
-                  <div className="flex-1">
-                    <div className="font-semibold text-foreground font-[var(--font-heading)]">{selected.animal}</div>
-                    <div className="text-[11px] text-muted-foreground italic">{selected.scientificName}</div>
+                <div className="mt-1 flex items-start gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold leading-tight text-foreground font-[var(--font-heading)]">{selected.animal}</div>
+                    <div className="text-[11px] text-muted-foreground italic leading-tight mt-0.5">{selected.scientificName}</div>
                   </div>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-2xl">{selected.emoji}</span>
+                  <span className="flex-1" />
                   <button onClick={playSound} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors" style={{ background: 'var(--accent)' }} aria-label={isPlaying ? 'Playing animal sound' : 'Play animal sound'}>
                     {isPlaying ? <Volume2 size={14} className="animate-pulse text-primary" /> : <Volume1 size={14} className="text-muted-foreground" />}
                   </button>
-                  <button
-                    onClick={() => toggleFavorite(selected.id)}
-                    className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors"
-                    style={{ background: 'var(--accent)' }}
-                    aria-label={isFavorite(selected.id) ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    <Heart size={14} fill={isFavorite(selected.id) ? '#ef4444' : 'none'} className={isFavorite(selected.id) ? 'text-red-500' : 'text-muted-foreground'} />
-                  </button>
+                  <HeartButton animalId={selected.id} animalName={selected.animal} size={14} className="w-9 h-9" style={{ background: 'var(--accent)' }} />
                   <button
                     onClick={() => compareIds.includes(selected.id) ? removeCompare(selected.id) : addCompare(selected.id)}
                     className={`w-9 h-9 flex items-center justify-center rounded-full hover:bg-accent transition-colors ${compareIds.includes(selected.id) ? 'text-primary' : 'text-muted-foreground'}`}

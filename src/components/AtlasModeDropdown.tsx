@@ -119,8 +119,7 @@ export default function AtlasModeDropdown({
             {count} {isPrehistoric ? strings.dinosaurUnit : strings.countries} · {regionCount} Regions
           </span>
         </div>
-        <span className="flex items-center gap-1 text-sm font-semibold text-foreground sm:hidden">
-          {isPrehistoric ? strings.atlasModes.prehistoric : strings.title}
+        <span className="flex items-center sm:hidden">
           <ChevronDown size={12} className={chevronClass} />
         </span>
       </button>

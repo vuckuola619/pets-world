@@ -88,6 +88,17 @@ function writeFavorites(ids: string[]): void {
   }
 }
 
+/** Persists the locale and keeps <html lang> in sync for screen readers */
+function setLocaleEffects(locale: Locale): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem('wildlife-locale', locale)
+  } catch {
+    // localStorage unavailable — locale still applies for this session
+  }
+  document.documentElement.lang = locale
+}
+
 /** Global map state store backed by Zustand */
 export const useMapStore = create<MapStore>((set) => ({
   selectedId: null,
@@ -115,7 +126,10 @@ export const useMapStore = create<MapStore>((set) => ({
   setSearchOpen: (open) => set({ searchOpen: open }),
   setMobileOpen: (open) => set({ mobileOpen: open }),
   toggleMobileOpen: () => set((s) => ({ mobileOpen: !s.mobileOpen })),
-  setLocale: (l) => set({ locale: l }),
+  setLocale: (l) => {
+    setLocaleEffects(l)
+    set({ locale: l })
+  },
   setTheme: (t) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('wildlife-theme', t)

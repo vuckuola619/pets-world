@@ -3,6 +3,7 @@ class AudioService {
   private ctx: AudioContext | null = null
   private _muted: boolean = false
   private _volume: number = 0.5
+  private muteListeners = new Set<() => void>()
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -10,6 +11,12 @@ class AudioService {
       const vol = localStorage.getItem('wildlife-audio-volume')
       if (vol) this._volume = Math.max(0, Math.min(1, parseFloat(vol)))
     }
+  }
+
+  /** Subscribe to mute changes (for useSyncExternalStore) */
+  subscribeMute(listener: () => void): () => void {
+    this.muteListeners.add(listener)
+    return () => this.muteListeners.delete(listener)
   }
 
   private getCtx(): AudioContext {
@@ -34,6 +41,7 @@ class AudioService {
     if (typeof window !== 'undefined') {
       localStorage.setItem('wildlife-audio-muted', String(this._muted))
     }
+    this.muteListeners.forEach((l) => l())
   }
 
   /** Sets volume (0-1) and persists to localStorage */
@@ -108,6 +116,28 @@ class AudioService {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
       osc.start(ctx.currentTime)
       osc.stop(ctx.currentTime + 0.3)
+    } catch (err) {
+      console.warn('[audio]', err)
+    }
+  }
+
+  /** Soft descending buzz for wrong quiz answers — gentle, not punishing */
+  playBuzzSound(): void {
+    if (this._muted) return
+    try {
+      const ctx = this.getCtx()
+      if (ctx.state !== 'running') return
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.setValueAtTime(220, ctx.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.22)
+      osc.type = "sawtooth"
+      gain.gain.setValueAtTime(0.08 * this._volume, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.25)
     } catch (err) {
       console.warn('[audio]', err)
     }

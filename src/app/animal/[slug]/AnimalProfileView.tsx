@@ -117,7 +117,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
   const iucn = IUCN_CONFIG[statusCode] || IUCN_CONFIG['NE']
 
   return (
-    <div className={`h-screen overflow-y-auto text-foreground ${isPrehistoric ? 'prehistoric-atlas' : ''}`} style={{ background: 'var(--natura-surface)' }}>
+    <main className={`h-screen overflow-y-auto text-foreground ${isPrehistoric ? 'prehistoric-atlas' : ''}`} style={{ background: 'var(--natura-surface)' }}>
       {/* Hero Section */}
       <div className="relative h-[45vh] min-h-[320px] w-full overflow-hidden flex items-end">
         <div className="absolute inset-0">
@@ -354,7 +354,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
           )}
         </section>
       </div>
-    </div>
+    </main>
   )
 }
 

@@ -40,28 +40,28 @@ export default function MapControls({ viewState, setViewState, onResetView }: Ma
       <button
         onClick={zoomIn}
         className="glass-card map-control-btn press rounded-xl w-11 h-11 md:w-10 md:h-10 flex items-center justify-center text-foreground/70 hover:text-foreground transition-all duration-200"
-        title="Zoom in"
+        title="Zoom in" aria-label="Zoom in"
       >
         <Plus size={16} />
       </button>
       <button
         onClick={zoomOut}
         className="glass-card map-control-btn press rounded-xl w-11 h-11 md:w-10 md:h-10 flex items-center justify-center text-foreground/70 hover:text-foreground transition-all duration-200"
-        title="Zoom out"
+        title="Zoom out" aria-label="Zoom out"
       >
         <Minus size={16} />
       </button>
       <button
         onClick={onResetView}
         className="glass-card map-control-btn press rounded-xl w-11 h-11 md:w-10 md:h-10 flex items-center justify-center text-foreground/70 hover:text-foreground transition-all duration-200"
-        title="Reset view"
+        title="Reset view" aria-label="Reset view"
       >
         <RotateCcw size={16} />
       </button>
       <button
         onClick={cycleMapStyle}
         className="glass-card map-control-btn press rounded-xl px-3 h-11 md:h-10 flex items-center justify-center text-xs font-medium text-foreground/70 hover:text-foreground gap-1.5 transition-all duration-200"
-        title="Switch map style"
+        title="Switch map style" aria-label="Switch map style"
       >
         <Layers size={14} />
         <span className="hidden md:inline">{mapStyleLabels[mapStyle]}</span>
