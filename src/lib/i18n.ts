@@ -143,6 +143,8 @@ export const translations = {
       showAll: 'Tampilkan Semua',
       share: 'Bagikan',
       shareCopied: 'Tautan tersalin ✓',
+      emptyTitle: 'Belum ada favorit',
+      emptyHint: 'Ketuk ikon hati pada spesies apa pun untuk mengumpulkannya di sini.',
     },
     offline: {
       offline: 'Anda sedang offline',
@@ -165,6 +167,7 @@ export const translations = {
     },
     noResults: 'Tidak ada hasil',
     noResultsHint: 'Coba kata kunci lain, atau hapus filternya.',
+    clear: 'Hapus',
     speciesUnit: 'spesies',
     dinosaurUnit: 'dinosaurus',
     geoTime: 'Skala waktu geologis',
@@ -341,6 +344,8 @@ export const translations = {
       showAll: 'Show All',
       share: 'Share',
       shareCopied: 'Link copied ✓',
+      emptyTitle: 'No favorites yet',
+      emptyHint: 'Tap the heart on any species to collect it here.',
     },
     offline: {
       offline: 'You are offline',
@@ -363,6 +368,7 @@ export const translations = {
     },
     noResults: 'No results found',
     noResultsHint: 'Try a different keyword, or clear the filters.',
+    clear: 'Clear',
     speciesUnit: 'species',
     dinosaurUnit: 'dinosaurs',
     geoTime: 'Geologic time',

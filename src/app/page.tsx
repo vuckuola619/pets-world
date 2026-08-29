@@ -1,7 +1,8 @@
 "use client"
 import React from 'react';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useSyncExternalStore } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera } from "lucide-react";
 import { t } from "../lib/i18n";
 import { type AnimalEntry } from "../data/countries";
@@ -15,22 +16,39 @@ import MobileSidebar from "../components/MobileSidebar";
 import AtlasModeDropdown from "../components/AtlasModeDropdown";
 import MapView from "../components/MapView";
 import AnimalSearch from "../components/AnimalSearch";
-import ComparePanel from "../components/ComparePanel";
+import ComparePanel, { CompareModal } from "../components/ComparePanel";
 import OfflineIndicator from "../components/OfflineIndicator";
 import AROverlay from "../components/AROverlay";
 
 const DEFAULT_VIEW = { longitude: 20, latitude: 20, zoom: 2 };
 
-/** Theme icon component */
+/** Theme icon that rotates/crossfades between sun, moon, and monitor */
 function ThemeIcon({ theme }: { theme: string }): React.JSX.Element {
-  if (theme === 'dark') return <Moon size={15} />;
-  if (theme === 'system') return <Monitor size={15} />;
-  return <Sun size={15} />;
+  const reduceMotion = useReducedMotion();
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span
+        key={theme}
+        className="flex"
+        initial={reduceMotion ? false : { rotate: -70, opacity: 0, scale: 0.7 }}
+        animate={{ rotate: 0, opacity: 1, scale: 1 }}
+        exit={reduceMotion ? { opacity: 0 } : { rotate: 70, opacity: 0, scale: 0.7 }}
+        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+      >
+        {theme === 'dark' ? <Moon size={15} /> : theme === 'system' ? <Monitor size={15} /> : <Sun size={15} />}
+      </motion.span>
+    </AnimatePresence>
+  );
 }
 
 /** Home page with map, sidebar, and controls */
 export default function Home(): React.JSX.Element {
   const [viewState, setViewState] = useState(DEFAULT_VIEW);
+  const muted = useSyncExternalStore(
+    (cb) => audioService.subscribeMute(cb),
+    () => audioService.isMuted(),
+    () => false,
+  );
   const filtered = useFilteredAnimals();
   const { atlasMode, setSelectedId, setMobileOpen, locale, setLocale, arOpen, setArOpen } = useMapStore();
   const { records, regions } = useAtlasData();
@@ -95,9 +113,20 @@ export default function Home(): React.JSX.Element {
           onClick={() => audioService.toggleMute()}
           className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
           title="Toggle sound"
-          aria-label={audioService.isMuted() ? 'Unmute sounds' : 'Mute sounds'}
+          aria-label={muted ? 'Unmute sounds' : 'Mute sounds'}
         >
-          {audioService.isMuted() ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={muted ? 'muted' : 'sound'}
+              className="flex"
+              initial={false}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.6, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            </motion.span>
+          </AnimatePresence>
         </button>
 
         {/* Locale toggle */}
@@ -145,6 +174,7 @@ export default function Home(): React.JSX.Element {
       </div>
 
       <ComparePanel />
+      <CompareModal />
     </div>
   );
 }

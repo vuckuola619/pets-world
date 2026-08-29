@@ -3,6 +3,7 @@ class AudioService {
   private ctx: AudioContext | null = null
   private _muted: boolean = false
   private _volume: number = 0.5
+  private muteListeners = new Set<() => void>()
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -10,6 +11,12 @@ class AudioService {
       const vol = localStorage.getItem('wildlife-audio-volume')
       if (vol) this._volume = Math.max(0, Math.min(1, parseFloat(vol)))
     }
+  }
+
+  /** Subscribe to mute changes (for useSyncExternalStore) */
+  subscribeMute(listener: () => void): () => void {
+    this.muteListeners.add(listener)
+    return () => this.muteListeners.delete(listener)
   }
 
   private getCtx(): AudioContext {
@@ -34,6 +41,7 @@ class AudioService {
     if (typeof window !== 'undefined') {
       localStorage.setItem('wildlife-audio-muted', String(this._muted))
     }
+    this.muteListeners.forEach((l) => l())
   }
 
   /** Sets volume (0-1) and persists to localStorage */

@@ -2,6 +2,7 @@
 import React from 'react';
 
 import { useRef, useEffect, useMemo, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { Search, Heart, GitCompareArrows } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { type AnimalEntry } from "../data/countries";
@@ -10,6 +11,8 @@ import { useAtlasData } from "../hooks/useAtlasAnimals";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { useFavorites } from "../hooks/useFavorites";
 import { audioService } from "./AudioService";
+import HeartButton from "./HeartButton";
+import AnimatedNumber from "./AnimatedNumber";
 import { t } from "../lib/i18n";
 import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
 import AnimalListSkeleton from "./AnimalListSkeleton";
@@ -25,6 +28,47 @@ const CONTINENT_EMOJI: Record<string, string> = {
   "Middle East": "🐪", Arctic: "🐻‍❄️", Antarctic: "🐧",
 };
 
+/** Gentle floating hearts for the empty-favorites state (rare moment — this
+ *  is where the delight budget lives). Pure SVG, no emoji. */
+function EmptyFavorites({ title, hint }: { title: string; hint: string }): React.JSX.Element {
+  const reduceMotion = useReducedMotion();
+  const hearts = [
+    { size: 40, x: 18, y: 26, opacity: 0.9, delay: 0 },
+    { size: 26, x: 64, y: 8, opacity: 0.55, delay: 0.6 },
+    { size: 20, x: 96, y: 34, opacity: 0.35, delay: 1.1 },
+  ];
+  return (
+    <motion.div
+      className="px-4 py-10 text-center"
+      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+    >
+      <div className="relative mx-auto h-16 w-28" aria-hidden>
+        {hearts.map((h, i) => (
+          <motion.svg
+            key={i}
+            viewBox="0 0 24 24"
+            width={h.size}
+            height={h.size}
+            className="absolute"
+            style={{ left: h.x, top: h.y, opacity: h.opacity }}
+            animate={reduceMotion ? undefined : { y: [0, -6, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: h.delay }}
+          >
+            <path
+              d="M12 21s-7.5-4.7-10-9.3C.6 8.6 2.2 5 5.6 5c2 0 3.4 1.1 4.4 2.6C11 6.1 12.4 5 14.4 5c3.4 0 5 3.6 3.6 6.7C19.5 16.3 12 21 12 21z"
+              fill="var(--natura-coral)"
+            />
+          </motion.svg>
+        ))}
+      </div>
+      <div className="mt-3 text-sm font-medium text-foreground">{title}</div>
+      <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{hint}</div>
+    </motion.div>
+  );
+}
+
 /** Desktop sidebar with virtualized animal list grouped by classification */
 export default function Sidebar(): React.JSX.Element {
   const {
@@ -35,7 +79,7 @@ export default function Sidebar(): React.JSX.Element {
   const tr = t(locale);
   const { regions } = useAtlasData();
   const allFiltered = useFilteredAnimals();
-  const { isFavorite, toggleFavorite, favorites } = useFavorites();
+  const { favorites } = useFavorites();
   const parentRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -127,7 +171,7 @@ export default function Sidebar(): React.JSX.Element {
       {/* Counter + About link + Favorites filter */}
       <div className="flex items-center justify-between px-1">
         <span className="text-[11px] text-muted-foreground font-medium">
-          {filtered.length} {atlasMode === 'prehistoric' ? tr.dinosaurUnit : tr.speciesUnit}
+          <AnimatedNumber value={filtered.length} /> {atlasMode === 'prehistoric' ? tr.dinosaurUnit : tr.speciesUnit}
         </span>
         <div className="flex items-center gap-1">
           <Link
@@ -155,11 +199,15 @@ export default function Sidebar(): React.JSX.Element {
       {/* Virtualized list */}
       <div ref={parentRef} className="flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">
         {mounted && filtered.length === 0 ? (
-          <div className="px-4 py-10 text-center animate-fade-in-up">
-            <div className="text-2xl" aria-hidden>🔍</div>
-            <div className="mt-2 text-sm font-medium text-foreground">{tr.noResults}</div>
-            <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{tr.noResultsHint}</div>
-          </div>
+          showFavoritesOnly && favorites.length === 0 ? (
+            <EmptyFavorites title={tr.favorites.emptyTitle} hint={tr.favorites.emptyHint} />
+          ) : (
+            <div className="px-4 py-10 text-center animate-fade-in-up">
+              <div className="text-2xl" aria-hidden>🔍</div>
+              <div className="mt-2 text-sm font-medium text-foreground">{tr.noResults}</div>
+              <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{tr.noResultsHint}</div>
+            </div>
+          )
         ) : (
           !mounted && <AnimalListSkeleton />
         )}
@@ -192,7 +240,6 @@ export default function Sidebar(): React.JSX.Element {
             const code = STATUS_CODE[c.conservationStatus] || 'LC';
             const iucnBg = IUCN_CONFIG[code]?.bg ?? '#888';
             const isInCompare = compareIds.includes(c.id);
-            const isFav = isFavorite(c.id);
 
             return (
               <div
@@ -243,24 +290,12 @@ export default function Sidebar(): React.JSX.Element {
                 </div>
 
                 {/* Favorite button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isFav) {
-                      const svg = e.currentTarget.querySelector('svg');
-                      if (svg) {
-                        svg.classList.remove('heart-pop');
-                        void svg.getBoundingClientRect();
-                        svg.classList.add('heart-pop');
-                      }
-                    }
-                    toggleFavorite(c.id);
-                  }}
-                  className="press shrink-0 p-0.5 transition-colors"
-                  aria-label={isFav ? `Remove ${c.animal} from favorites` : `Add ${c.animal} to favorites`}
-                >
-                  <Heart size={12} fill={isFav ? "#ef4444" : "none"} className={isFav ? "text-red-500" : "text-muted-foreground/30 hover:text-red-400"} />
-                </button>
+                <HeartButton
+                  animalId={c.id}
+                  animalName={c.animal}
+                  size={12}
+                  className="press p-0.5"
+                />
 
                 {/* Compare button */}
                 <button
