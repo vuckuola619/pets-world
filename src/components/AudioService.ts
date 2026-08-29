@@ -121,6 +121,28 @@ class AudioService {
     }
   }
 
+  /** Soft descending buzz for wrong quiz answers — gentle, not punishing */
+  playBuzzSound(): void {
+    if (this._muted) return
+    try {
+      const ctx = this.getCtx()
+      if (ctx.state !== 'running') return
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.setValueAtTime(220, ctx.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.22)
+      osc.type = "sawtooth"
+      gain.gain.setValueAtTime(0.08 * this._volume, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.25)
+    } catch (err) {
+      console.warn('[audio]', err)
+    }
+  }
+
   playAnimalRepresentativeSound(animal: string, classification: string): void {
     if (this._muted) return
     try {
