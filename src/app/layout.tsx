@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegistrar from "../components/ServiceWorkerRegistrar";
+import LocaleSync from "../components/LocaleSync";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -15,9 +16,19 @@ const outfit = Outfit({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#1a3a2a",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://pets-world.pages.dev"),
-  title: "World Wildlife Atlas — Interactive Species Explorer",
+  title: {
+    default: "World Wildlife Atlas — Interactive Species Explorer",
+    template: "%s | World Wildlife Atlas",
+  },
   description:
     "Discover 186+ wildlife species across 9 continents. Explore conservation status, habitats, and fun facts on an interactive global map.",
   keywords: [
@@ -29,6 +40,9 @@ export const metadata: Metadata = {
     "species explorer",
     "education",
   ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "World Wildlife Atlas",
     description:
@@ -78,7 +92,6 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#1a3a2a" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="h-full overflow-hidden bg-background text-foreground">
@@ -89,6 +102,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ServiceWorkerRegistrar />
+        <LocaleSync />
         {children}
       </body>
     </html>

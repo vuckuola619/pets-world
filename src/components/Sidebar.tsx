@@ -141,6 +141,7 @@ export default function Sidebar(): React.JSX.Element {
         <input
           type="text"
           placeholder={tr.search}
+          aria-label={tr.search}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full rounded-xl border border-border bg-accent/50 py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/40 focus:bg-card focus:ring-2 focus:ring-primary/10 transition-all duration-200"

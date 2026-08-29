@@ -3,7 +3,9 @@ import React from 'react';
 
 import { useState, useCallback, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera, Gamepad2 } from "lucide-react";
+import Link from "next/link";
 import { t } from "../lib/i18n";
 import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
@@ -14,13 +16,19 @@ import { audioService } from "../components/AudioService";
 import Sidebar from "../components/Sidebar";
 import MobileSidebar from "../components/MobileSidebar";
 import AtlasModeDropdown from "../components/AtlasModeDropdown";
-import MapView from "../components/MapView";
+import MapSkeleton from "../components/MapSkeleton";
 import AnimalSearch from "../components/AnimalSearch";
 import ComparePanel, { CompareModal } from "../components/ComparePanel";
 import OfflineIndicator from "../components/OfflineIndicator";
 import AROverlay from "../components/AROverlay";
 
 const DEFAULT_VIEW = { longitude: 20, latitude: 20, zoom: 2 };
+
+/** maplibre-gl is heavy — load the map chunk only when the home page mounts */
+const MapView = dynamic(() => import("../components/MapView"), {
+  ssr: false,
+  loading: () => <MapSkeleton />,
+});
 
 /** Theme icon that rotates/crossfades between sun, moon, and monitor */
 function ThemeIcon({ theme }: { theme: string }): React.JSX.Element {
@@ -79,6 +87,7 @@ export default function Home(): React.JSX.Element {
 
   return (
     <div className={`flex h-screen w-screen flex-col overflow-hidden ${isPrehistoric ? 'prehistoric-atlas' : ''}`} style={{ background: 'var(--natura-surface)' }}>
+      <h1 className="sr-only">{t(locale).title}</h1>
       {/* ─── Premium Header ─── */}
       <header className="glass-header flex h-14 shrink-0 items-center gap-2 px-4 z-20">
         <MobileSidebar />
@@ -151,6 +160,17 @@ export default function Home(): React.JSX.Element {
           </button>
         )}
 
+        {/* Quiz mode */}
+        <Link
+          href="/quiz"
+          className="flex items-center gap-1.5 press rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-foreground transition-all duration-200 hover:shadow-md active:scale-95"
+          title={t(locale).quiz.title}
+          aria-label={t(locale).quiz.title}
+        >
+          <Gamepad2 size={13} aria-hidden />
+          <span className="hidden lg:inline">{t(locale).quiz.title}</span>
+        </Link>
+
         {/* Random */}
         <button
           onClick={randomAnimal}
@@ -168,10 +188,10 @@ export default function Home(): React.JSX.Element {
       <OfflineIndicator />
 
       {/* ─── Main Content ─── */}
-      <div id="main-content" className="flex flex-1 overflow-hidden relative">
+      <main id="main-content" className="flex flex-1 overflow-hidden relative">
         <Sidebar />
         <MapView viewState={viewState} setViewState={setViewState} />
-      </div>
+      </main>
 
       <ComparePanel />
       <CompareModal />

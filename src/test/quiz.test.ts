@@ -55,7 +55,7 @@ describe('generateQuiz', () => {
     const quiz = generateQuiz({ mode: 'wildlife', locale: 'id', seed: SEED, length: 40 })
     const regionQs = quiz.filter((q) => q.kind === 'region')
     expect(regionQs.length).toBeGreaterThan(0)
-    const translatedValues = Object.values(t('id').regions)
+    const translatedValues: string[] = Object.values(t('id').regions)
     for (const q of regionQs) {
       for (const o of q.options) {
         // Regions with an ID translation must never leak their raw English name
