@@ -116,7 +116,16 @@ export default function QuizView(): React.JSX.Element {
   const reduceMotion = useReducedMotion();
   const { questions, index, answers, roundActive, stats, result, startRound, answerCurrent, next, finishRound } = useQuizStore();
 
-  const phase = roundActive && index < questions.length ? 'playing' : roundActive && index >= questions.length ? 'awaiting-finish' : questions.length > 0 && result ? 'results' : 'intro';
+  // Result screen once the round is folded into stats; after the last
+  // question next() clears roundActive, so "awaiting-finish" must not
+  // depend on it.
+  const phase = result
+    ? 'results'
+    : roundActive && index < questions.length
+      ? 'playing'
+      : questions.length > 0 && index >= questions.length
+        ? 'awaiting-finish'
+        : 'intro';
 
   // Fold stats once the last question is passed; celebrate bests immediately
   useEffect(() => {
@@ -190,9 +199,9 @@ export default function QuizView(): React.JSX.Element {
   return (
     <div className="h-screen overflow-y-auto bg-natura-gradient scrollbar-thin">
       <div className="min-h-full w-full px-4 pb-16 pt-5 sm:px-6">
-        <div className="mx-auto w-full max-w-xl">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3">
+      <div className="mx-auto flex min-h-full w-full max-w-xl flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3">
             <Link
               href="/"
               className="press flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur transition-colors hover:bg-white/20"
@@ -215,7 +224,7 @@ export default function QuizView(): React.JSX.Element {
             {phase === 'intro' && (
               <motion.section
                 key="intro"
-                className="mt-8 rounded-3xl border border-white/25 bg-white/10 p-8 text-center shadow-xl backdrop-blur-md"
+                className="my-auto mt-8 rounded-3xl border border-white/25 bg-white/10 p-8 text-center shadow-xl backdrop-blur-md"
                 initial={reduceMotion ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -274,7 +283,7 @@ export default function QuizView(): React.JSX.Element {
                   >
                     {question.kind === 'blur' && <MysteryImage question={question} revealed={picked !== null} />}
                     {question.kind === 'fact' && (
-                      <blockquote className="rounded-2xl border-l-4 bg-accent/60 p-4 text-sm italic leading-relaxed text-foreground" style={{ borderColor: 'var(--natura-ocean)' }}>
+                      <blockquote className="rounded-2xl bg-accent/60 px-4 py-3.5 text-sm italic leading-relaxed text-foreground">
                         “{question.statement}”
                       </blockquote>
                     )}

@@ -428,6 +428,14 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: var(--natura-emerald);
 }
+/* Hidden horizontal scrollbar (header on narrow phones still scrolls) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 
 /* ─── Press feedback ────────────────────────── */
 /* Add .press to any tappable control: subtle shrink while held. Fast and

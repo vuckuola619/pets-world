@@ -89,11 +89,15 @@ export default function Home(): React.JSX.Element {
     <div className={`flex h-screen w-screen flex-col overflow-hidden ${isPrehistoric ? 'prehistoric-atlas' : ''}`} style={{ background: 'var(--natura-surface)' }}>
       <h1 className="sr-only">{t(locale).title}</h1>
       {/* ─── Premium Header ─── */}
-      <header className="glass-header flex h-14 shrink-0 items-center gap-2 px-4 z-20">
+      {/* On narrow phones the row scrolls horizontally (scrollbar hidden)
+          instead of clipping the last controls. */}
+      <header className="glass-header flex h-14 shrink-0 items-center gap-2 px-4 z-20 overflow-x-auto scrollbar-none [&>*]:shrink-0">
         <MobileSidebar />
 
         {/* Logo / atlas mode switcher */}
-        <AtlasModeDropdown count={filtered.length} regionCount={regions.length} />
+        <div className="shrink-0">
+          <AtlasModeDropdown count={filtered.length} regionCount={regions.length} />
+        </div>
 
         <div className="flex-1" />
 
@@ -117,10 +121,10 @@ export default function Home(): React.JSX.Element {
           <ThemeIcon theme={theme} />
         </button>
 
-        {/* Audio mute toggle */}
+        {/* Audio mute toggle (desktop/tablet — the mobile header is full) */}
         <button
           onClick={() => audioService.toggleMute()}
-          className="flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+          className="hidden sm:flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
           title="Toggle sound"
           aria-label={muted ? 'Unmute sounds' : 'Mute sounds'}
         >
@@ -160,10 +164,10 @@ export default function Home(): React.JSX.Element {
           </button>
         )}
 
-        {/* Quiz mode */}
+        {/* Quiz mode (mobile gets a roomier entry inside the species sheet) */}
         <Link
           href="/quiz"
-          className="flex items-center gap-1.5 press rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-foreground transition-all duration-200 hover:shadow-md active:scale-95"
+          className="hidden sm:flex items-center gap-1.5 press rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-foreground transition-all duration-200 hover:shadow-md active:scale-95"
           title={t(locale).quiz.title}
           aria-label={t(locale).quiz.title}
         >
@@ -180,7 +184,7 @@ export default function Home(): React.JSX.Element {
           }}
         >
           <Shuffle size={13} />
-          {t(locale).random}
+          <span className="hidden sm:inline">{t(locale).random}</span>
         </button>
       </header>
 

@@ -3,7 +3,8 @@ import React from 'react';
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
-import { Search, Menu, X } from "lucide-react";
+import { Search, Menu, X, Gamepad2 } from "lucide-react";
+import Link from "next/link";
 import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { useAtlasData } from "../hooks/useAtlasAnimals";
@@ -87,6 +88,17 @@ export default function MobileSidebar(): React.JSX.Element {
                       className="rounded-full px-4 py-1.5 text-xs font-semibold bg-accent hover:bg-accent/80 active:bg-accent/60 text-foreground transition-colors"
                     >{tr.done}</button>
                   </div>
+
+                  {/* Quiz entry — the mobile header is too full for it */}
+                  <Link
+                    href="/quiz"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-accent/50 px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                  >
+                    <Gamepad2 size={16} aria-hidden className="text-primary" />
+                    {tr.quiz.title}
+                  </Link>
+
                   <div className="relative">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input
