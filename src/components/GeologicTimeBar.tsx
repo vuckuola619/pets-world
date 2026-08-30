@@ -42,7 +42,7 @@ export default function GeologicTimeBar({ fossil, width = 320 }: GeologicTimeBar
 
   return (
     <div className="glass-card rounded-xl p-3" style={{ maxWidth: width }}>
-      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="mb-1 text-micro font-semibold uppercase tracking-wider text-muted-foreground">
         {t(locale).geoTime}
       </div>
       <svg width="100%" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${fossil.interval}: ${fossil.earlyAgeMa}–${fossil.lateAgeMa} Ma`}>

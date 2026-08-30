@@ -3,6 +3,7 @@ import React from 'react';
 
 import { useRef, useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO } from "../lib/motion";
 import { Search, Heart, GitCompareArrows } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { type AnimalEntry } from "../data/countries";
@@ -14,11 +15,12 @@ import { audioService } from "./AudioService";
 import HeartButton from "./HeartButton";
 import AnimatedNumber from "./AnimatedNumber";
 import { t } from "../lib/i18n";
-import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
+import { IUCN_CONFIG, statusCodeFor, IUCN_FALLBACK } from "../lib/iucn";
 import AnimalListSkeleton from "./AnimalListSkeleton";
+import IucnDot from "./IucnDot";
 import Link from "next/link";
 
-import { CONTINENT_COLORS } from "../lib/regions";
+import { regionColor } from "../lib/regions";
 
 
 const CONTINENT_EMOJI: Record<string, string> = {
@@ -42,7 +44,7 @@ function EmptyFavorites({ title, hint }: { title: string; hint: string }): React
       className="px-4 py-10 text-center"
       initial={reduceMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: 0.4, ease: EASE_OUT_EXPO }}
     >
       <div className="relative mx-auto h-16 w-28" aria-hidden>
         {hearts.map((h, i) => (
@@ -157,7 +159,7 @@ export default function Sidebar(): React.JSX.Element {
             <button
               key={c}
               onClick={() => setActiveRegion(c)}
-              className={`press flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200 ${
+              className={`press flex items-center gap-1 rounded-full px-2.5 py-1 text-micro font-medium transition-all duration-200 ${
                 isActive
                   ? "region-pill-active"
                   : "bg-accent text-muted-foreground hover:bg-accent/80 hover:text-foreground"
@@ -172,24 +174,32 @@ export default function Sidebar(): React.JSX.Element {
 
       {/* Counter + About link + Favorites filter */}
       <div className="flex items-center justify-between px-1">
-        <span className="text-[11px] text-muted-foreground font-medium">
+        <span className="text-micro text-muted-foreground font-medium">
           <AnimatedNumber value={filtered.length} /> {atlasMode === 'prehistoric' ? tr.dinosaurUnit : tr.speciesUnit}
         </span>
         <div className="flex items-center gap-1">
           <Link
             href="/about"
-            className="text-[11px] font-medium px-2 py-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+            className="text-micro font-medium px-2 py-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
             title={tr.about.link}
           >
             {t(locale).about.link}
           </Link>
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full transition-all duration-200 ${
+            className={`flex items-center gap-1 text-micro font-medium px-2 py-0.5 rounded-full transition-all duration-200 ${
               showFavoritesOnly
-                ? "bg-red-500/10 text-red-500"
+                ? ""
                 : "text-muted-foreground hover:text-foreground hover:bg-accent"
             }`}
+            style={
+              showFavoritesOnly
+                ? {
+                    background: "color-mix(in srgb, var(--natura-coral) 12%, transparent)",
+                    color: "var(--natura-coral)",
+                  }
+                : undefined
+            }
             title={showFavoritesOnly ? "Show all" : "Show favorites only"}
           >
             <Heart size={11} fill={showFavoritesOnly ? "currentColor" : "none"} />
@@ -220,7 +230,7 @@ export default function Sidebar(): React.JSX.Element {
               return (
                 <div
                   key={item.id}
-                  className="absolute left-0 right-0 flex items-center gap-2 px-3 text-[10px] font-bold uppercase tracking-widest z-10"
+                  className="absolute left-0 right-0 flex items-center gap-2 px-3 text-micro font-bold uppercase tracking-widest z-10"
                   style={{
                     height: `${virtualItem.size}px`,
                     top: `${virtualItem.start}px`,
@@ -238,9 +248,9 @@ export default function Sidebar(): React.JSX.Element {
             const c = item.animal;
             const isSelected = selectedId === c.id;
             const isHovered = sidebarHoveredId === c.id;
-            const color = CONTINENT_COLORS[c.region] || "#6366f1";
-            const code = STATUS_CODE[c.conservationStatus] || 'LC';
-            const iucnBg = IUCN_CONFIG[code]?.bg ?? '#888';
+            const color = regionColor(c.region);
+            const code = statusCodeFor(c.conservationStatus);
+            const iucnBg = IUCN_CONFIG[code]?.bg ?? IUCN_FALLBACK;
             const isInCompare = compareIds.includes(c.id);
 
             return (
@@ -270,14 +280,8 @@ export default function Sidebar(): React.JSX.Element {
                     : `3px solid ${color}30`,
                 }}
               >
-                {/* IUCN dot */}
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{
-                    background: iucnBg,
-                    boxShadow: `0 0 0 2px ${iucnBg}30`,
-                  }}
-                />
+                {/* IUCN status — shape-coded, not color-only */}
+                <IucnDot code={code} color={iucnBg} />
                 <span className="sr-only">{c.conservationStatus}</span>
 
                 {/* Emoji */}
@@ -286,7 +290,7 @@ export default function Sidebar(): React.JSX.Element {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <span className="block truncate font-medium text-foreground text-[13px] leading-tight">{c.animal}</span>
-                  <span className="block text-[11px] text-muted-foreground truncate">
+                  <span className="block text-micro text-muted-foreground truncate">
                     {c.flag} {c.country}
                   </span>
                 </div>

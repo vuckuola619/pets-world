@@ -4,28 +4,16 @@ import React from 'react';
 import { useEffect, useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO } from "../lib/motion";
 import { Search, X } from "lucide-react";
 import { useMapStore } from "../store/useMapStore";
-import { IUCN_CONFIG } from "../lib/iucn";
+import { IUCN_CONFIG, statusCodeFor, IUCN_FALLBACK } from "../lib/iucn";
 import { t } from "../lib/i18n";
 import { getAtlasRecords } from "../hooks/useAtlasAnimals";
+import IucnDot from "./IucnDot";
 
 const WILDLIFE_IUCN_FILTERS = ["LC", "NT", "VU", "EN", "CR"];
 const PREHISTORIC_IUCN_FILTERS = ["EX"];
-
-/** Maps conservation status string to IUCN code */
-function conservationToCode(status: string): string {
-  const map: Record<string, string> = {
-    "Least Concern": "LC",
-    "Near Threatened": "NT",
-    "Vulnerable": "VU",
-    "Endangered": "EN",
-    "Critically Endangered": "CR",
-    "Data Deficient": "DD",
-    "Extinct": "EX",
-  };
-  return map[status] ?? "LC";
-}
 
 /** Stagger delay for result rows, capped so long lists never trail behind */
 function rowDelay(index: number): number {
@@ -63,7 +51,7 @@ export default function AnimalSearch(): React.JSX.Element {
     return records.filter((c) => {
       const matchSearch = !q || [c.animal, c.scientificName, c.country, c.region, c.habitat, ...c.funFacts].join(' ').toLowerCase().includes(q);
       const matchIucn = activeIucnFilters.length === 0 || activeIucnFilters.some((f) => {
-        const statusCode = conservationToCode(c.conservationStatus);
+        const statusCode = statusCodeFor(c.conservationStatus);
         return statusCode === f;
       });
       const matchClass = activeClassFilters.length === 0 || activeClassFilters.includes(c.classification);
@@ -85,7 +73,7 @@ export default function AnimalSearch(): React.JSX.Element {
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
   };
 
-  const fast = { duration: 0.15, ease: [0.23, 1, 0.32, 1] as const };
+  const fast = { duration: 0.15, ease: EASE_OUT_EXPO };
 
   return (
     <Dialog.Root open={searchOpen} onOpenChange={setSearchOpen}>
@@ -129,7 +117,7 @@ export default function AnimalSearch(): React.JSX.Element {
                       <X size={14} />
                     </button>
                   ) : null}
-                  <kbd className="hidden sm:inline text-[10px] text-muted-foreground px-1.5 py-0.5 rounded border" style={{ background: 'var(--accent)', borderColor: 'var(--border)' }}>ESC</kbd>
+                  <kbd className="hidden sm:inline text-micro text-muted-foreground px-1.5 py-0.5 rounded border" style={{ background: 'var(--accent)', borderColor: 'var(--border)' }}>ESC</kbd>
                 </div>
 
                 {/* Active filters */}
@@ -137,14 +125,14 @@ export default function AnimalSearch(): React.JSX.Element {
                   <div className="flex flex-wrap gap-1 px-4 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
                     {iucnFilters.map((f) => (
                       <button key={f} onClick={() => toggleFilter(iucnFilters, setIucnFilters, f)}
-                        className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border text-muted-foreground hover:bg-accent transition-colors" style={{ borderColor: 'var(--border)' }}>
-                        <span className="w-2 h-2 rounded-full" style={{ background: IUCN_CONFIG[f]?.bg ?? "#888" }} />
+                        className="flex items-center gap-1 text-micro px-2 py-0.5 rounded-full border text-muted-foreground hover:bg-accent transition-colors" style={{ borderColor: 'var(--border)' }}>
+                        <IucnDot code={f} color={IUCN_CONFIG[f]?.bg} size={10} />
                         {f} <X size={10} />
                       </button>
                     ))}
                     {classFilters.map((f) => (
                       <button key={f} onClick={() => toggleFilter(classFilters, setClassFilters, f)}
-                        className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border text-muted-foreground hover:bg-accent transition-colors" style={{ borderColor: 'var(--border)' }}>
+                        className="flex items-center gap-1 text-micro px-2 py-0.5 rounded-full border text-muted-foreground hover:bg-accent transition-colors" style={{ borderColor: 'var(--border)' }}>
                         {f} <X size={10} />
                       </button>
                     ))}
@@ -163,11 +151,11 @@ export default function AnimalSearch(): React.JSX.Element {
                         animate={reduceMotion || !active ? { scale: 1 } : { scale: [1, 1.08, 1] }}
                         transition={{ duration: 0.16 }}
                         aria-pressed={active}
-                        className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full transition-colors ${
+                        className={`flex items-center gap-1 text-micro px-2 py-0.5 rounded-full transition-colors ${
                           active ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground hover:bg-accent/80"
                         }`}
                       >
-                        <span className="w-2 h-2 rounded-full" style={{ background: active ? "currentColor" : IUCN_CONFIG[f]?.bg ?? "#888" }} />
+                        <span className="w-2 h-2 rounded-full" style={{ background: active ? "currentColor" : IUCN_CONFIG[f]?.bg ?? IUCN_FALLBACK }} />
                         {f}
                       </motion.button>
                     );
@@ -186,7 +174,7 @@ export default function AnimalSearch(): React.JSX.Element {
                         animate={reduceMotion || !active ? { scale: 1 } : { scale: [1, 1.08, 1] }}
                         transition={{ duration: 0.16 }}
                         aria-pressed={active}
-                        className={`text-[10px] px-2 py-0.5 rounded-full transition-colors ${
+                        className={`text-micro px-2 py-0.5 rounded-full transition-colors ${
                           active ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground hover:bg-accent/80"
                         }`}
                       >
@@ -205,7 +193,7 @@ export default function AnimalSearch(): React.JSX.Element {
                     </div>
                   ) : (
                     results.slice(0, 50).map((c, i) => {
-                      const code = conservationToCode(c.conservationStatus);
+                      const code = statusCodeFor(c.conservationStatus);
                       const iucn = IUCN_CONFIG[code];
                       return (
                         <motion.button
@@ -213,19 +201,19 @@ export default function AnimalSearch(): React.JSX.Element {
                           onClick={() => selectAnimal(c.id)}
                           initial={reduceMotion ? false : { opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1], delay: rowDelay(i) }}
+                          transition={{ duration: 0.2, ease: EASE_OUT_EXPO, delay: rowDelay(i) }}
                           className={`w-full flex items-center gap-3 px-4 py-3 md:py-2 text-left text-sm hover:bg-accent transition-colors ${
                             selectedId === c.id ? "bg-primary/10" : ""
                           }`}
                         >
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: iucn?.bg ?? "#888" }} />
+                          <IucnDot code={code} color={iucn?.bg} />
                           <span className="sr-only">{c.conservationStatus}</span>
                           <span className="text-lg">{c.emoji}</span>
                           <div className="flex-1 min-w-0">
                             <div className="truncate text-foreground">{c.animal}</div>
-                            <div className="text-[11px] text-muted-foreground italic truncate">{c.scientificName}</div>
+                            <div className="text-micro text-muted-foreground italic truncate">{c.scientificName}</div>
                           </div>
-                          <span className="text-[10px] text-muted-foreground">{c.country}</span>
+                          <span className="text-micro text-muted-foreground">{c.country}</span>
                         </motion.button>
                       );
                     })

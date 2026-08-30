@@ -33,7 +33,7 @@ export default function AboutView(): React.JSX.Element {
           <ArrowLeft size={14} aria-hidden /> {tr.backToMap}
         </Link>
 
-        <h1 className="mt-8 font-[var(--font-heading)] text-4xl font-bold">{tr.title}</h1>
+        <h1 className="mt-8 font-heading text-4xl font-bold">{tr.title}</h1>
         <p className="mt-2 text-lg text-muted-foreground">{tr.tagline}</p>
         <p className="mt-5 leading-relaxed text-foreground/90">{tr.intro}</p>
 
@@ -49,7 +49,7 @@ export default function AboutView(): React.JSX.Element {
               { n: 9, label: tr.regionCount },
             ].map((s) => (
               <div key={s.label} className="glass-card rounded-2xl px-4 py-5 text-center">
-                <div className="font-[var(--font-heading)] text-3xl font-bold text-primary">{s.n}</div>
+                <div className="font-heading text-3xl font-bold text-primary">{s.n}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
               </div>
             ))}

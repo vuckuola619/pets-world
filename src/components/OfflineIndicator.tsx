@@ -3,6 +3,7 @@ import React from 'react';
 
 import { useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { EASE_OUT_EXPO } from "../lib/motion";
 import { WifiOff } from "lucide-react";
 import { useMapStore } from "../store/useMapStore";
 import { t } from "../lib/i18n";
@@ -44,7 +45,7 @@ export default function OfflineIndicator(): React.JSX.Element {
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -16 }}
-          transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
         >
           <div className="glass-card rounded-xl shadow-lg px-4 py-2.5 flex items-center gap-2.5 text-sm font-medium text-amber-600 dark:text-amber-400" role="status">
             <WifiOff size={16} style={{ animation: 'pulse-dot 2s ease-in-out infinite' }} />

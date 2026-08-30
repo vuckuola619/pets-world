@@ -18,7 +18,7 @@ export default function AnimalDetailsClient({ animalName }: Props): React.JSX.El
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-lg font-semibold text-foreground font-[var(--font-heading)]">
+        <h2 className="text-lg font-semibold text-foreground font-heading">
           {t(locale).details.extendedData}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -51,10 +51,10 @@ export default function AnimalDetailsClient({ animalName }: Props): React.JSX.El
 
   return (
     <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-      <h2 className="text-lg font-semibold text-foreground font-[var(--font-heading)] mb-3 flex items-center gap-2">
+      <h2 className="text-lg font-semibold text-foreground font-heading mb-3 flex items-center gap-2">
         <span className="w-1 h-5 rounded-full" style={{ background: 'var(--natura-ocean)' }} />
         {t(locale).details.extendedProfile}
-        <span className="text-[10px] font-normal text-muted-foreground bg-accent px-2 py-0.5 rounded-full">
+        <span className="text-micro font-normal text-muted-foreground bg-accent px-2 py-0.5 rounded-full">
           {t(locale).details.viaApiNinjas}
         </span>
       </h2>
@@ -69,7 +69,7 @@ export default function AnimalDetailsClient({ animalName }: Props): React.JSX.El
               <span className="text-muted-foreground group-hover:text-primary transition-colors duration-200">
                 {card.icon}
               </span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+              <span className="text-micro font-medium text-muted-foreground uppercase tracking-wide">
                 {card.label}
               </span>
             </div>

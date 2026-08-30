@@ -3,6 +3,7 @@ import React from 'react';
 
 import { useState, useCallback, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO } from "../lib/motion";
 import dynamic from "next/dynamic";
 import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera, Gamepad2, Download } from "lucide-react";
 import Link from "next/link";
@@ -42,7 +43,7 @@ function ThemeIcon({ theme }: { theme: string }): React.JSX.Element {
         initial={reduceMotion ? false : { rotate: -70, opacity: 0, scale: 0.7 }}
         animate={{ rotate: 0, opacity: 1, scale: 1 }}
         exit={reduceMotion ? { opacity: 0 } : { rotate: 70, opacity: 0, scale: 0.7 }}
-        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+        transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
       >
         {theme === 'dark' ? <Moon size={15} /> : theme === 'system' ? <Monitor size={15} /> : <Sun size={15} />}
       </motion.span>

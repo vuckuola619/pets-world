@@ -16,16 +16,16 @@ import { localDinoThumb } from "../lib/wikiImages";
 import { audioService } from "./AudioService";
 import HeartButton from "./HeartButton";
 import { t } from "../lib/i18n";
-import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
+import { IUCN_CONFIG, statusCodeFor, IUCN_FALLBACK } from "../lib/iucn";
 import { translateCountry, getEntryFunFacts } from "../lib/profileText";
+import { SHEET_SPRING } from "../lib/motion";
 
-import { CONTINENT_COLORS } from "../lib/regions";
+import { regionColor } from "../lib/regions";
 
 function getDinosaurRecord(entry: AnimalEntry | null) {
   return entry && 'dinosaur' in entry ? (entry as DinosaurAnimalEntry).dinosaur : null;
 }
 
-const SHEET_SPRING = { type: "spring", duration: 0.5, bounce: 0.2 } as const;
 
 /** Premium mobile detail sheet with glassmorphism.
  *  Radix Dialog owns a11y (focus trap, Escape, aria); motion owns the
@@ -78,9 +78,9 @@ export default function MobileDetailPanel(): React.JSX.Element {
       <AnimatePresence>
         {selected && isMobileViewport && (() => {
           const animal = selected;
-          const color = CONTINENT_COLORS[animal.region] || "#6366f1";
-          const iucnCode = STATUS_CODE[animal.conservationStatus] || 'LC';
-          const iucnBg = IUCN_CONFIG[iucnCode]?.bg ?? '#888';
+          const color = regionColor(animal.region);
+          const iucnCode = statusCodeFor(animal.conservationStatus);
+          const iucnBg = IUCN_CONFIG[iucnCode]?.bg ?? IUCN_FALLBACK;
           const isInCompare = compareIds.includes(animal.id);
           const selectedDinosaur = getDinosaurRecord(animal);
           return (
@@ -164,7 +164,7 @@ export default function MobileDetailPanel(): React.JSX.Element {
                   <div className="mt-1 flex items-center gap-2">
                     <span className="text-2xl">{animal.emoji}</span>
                     <div className="flex-1">
-                      <div className="font-semibold text-foreground font-[var(--font-heading)]">{animal.animal}</div>
+                      <div className="font-semibold text-foreground font-heading">{animal.animal}</div>
                       <div className="text-xs text-muted-foreground italic">{animal.scientificName}</div>
                     </div>
                     {/* Action buttons */}
@@ -195,11 +195,11 @@ export default function MobileDetailPanel(): React.JSX.Element {
 
                   {/* Badges */}
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
-                    <div className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ background: 'var(--accent)', color: 'var(--natura-emerald)' }}>
+                    <div className="text-micro px-2.5 py-1 rounded-full font-medium" style={{ background: 'var(--accent)', color: 'var(--natura-emerald)' }}>
                       {tr.classification[animal.classification as keyof typeof tr.classification] ?? animal.classification}
                     </div>
                     <div
-                      className="text-[10px] px-2.5 py-1 rounded-full font-bold"
+                      className="text-micro px-2.5 py-1 rounded-full font-bold"
                       style={{
                         background: `${iucnBg}20`,
                         color: iucnBg,
@@ -207,7 +207,7 @@ export default function MobileDetailPanel(): React.JSX.Element {
                     >
                       {iucnCode} · {tr.conservation[animal.conservationStatus as keyof typeof tr.conservation] ?? animal.conservationStatus}
                     </div>
-                    <div className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{ background: `${color}15`, color }}>
+                    <div className="text-micro px-2.5 py-1 rounded-full font-medium" style={{ background: `${color}15`, color }}>
                       {tr.regions[animal.region as keyof typeof tr.regions] ?? animal.region}
                     </div>
                   </div>
@@ -215,15 +215,15 @@ export default function MobileDetailPanel(): React.JSX.Element {
                   {/* Quick stats */}
                   <div className="grid grid-cols-3 gap-2 mt-3">
                     <div className="glass-card rounded-lg px-2.5 py-2 text-center">
-                      <div className="text-[9px] text-muted-foreground uppercase font-semibold">Pop.</div>
+                      <div className="text-micro text-muted-foreground uppercase font-semibold">Pop.</div>
                       <div className="text-xs font-medium text-foreground">{animal.population}</div>
                     </div>
                     <div className="glass-card rounded-lg px-2.5 py-2 text-center">
-                      <div className="text-[9px] text-muted-foreground uppercase font-semibold">Diet</div>
+                      <div className="text-micro text-muted-foreground uppercase font-semibold">Diet</div>
                       <div className="text-xs font-medium text-foreground">{animal.diet}</div>
                     </div>
                     <div className="glass-card rounded-lg px-2.5 py-2 text-center">
-                      <div className="text-[9px] text-muted-foreground uppercase font-semibold">Class</div>
+                      <div className="text-micro text-muted-foreground uppercase font-semibold">Class</div>
                       <div className="text-xs font-medium text-foreground">{animal.classification}</div>
                     </div>
                   </div>
@@ -233,7 +233,7 @@ export default function MobileDetailPanel(): React.JSX.Element {
                     {getEntryFunFacts(animal, locale).slice(0, 3).map((f, i) => (
                       <li key={i} className="flex gap-2">
                         <span
-                          className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
+                          className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-micro font-bold text-white mt-0.5"
                           style={{ background: iucnBg }}
                         >
                           {i + 1}
@@ -262,7 +262,7 @@ export default function MobileDetailPanel(): React.JSX.Element {
                         href={selectedDinosaur.sourceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-2 inline-block text-[11px] font-semibold text-primary hover:underline"
+                        className="mt-2 inline-block text-micro font-semibold text-primary hover:underline"
                       >
                         Verify occurrence {selectedDinosaur.pbdbOccurrenceId}
                       </a>

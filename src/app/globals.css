@@ -8,6 +8,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
+  /* De-facto micro label size — replaces the ad-hoc text-[9px]/[10px]/[11px] */
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.45;
+  /* Elevation scale for the recurring custom shadows (markers, sidebar rows,
+     map controls, active pills) — replaces raw rgba box-shadows per class. */
+  --shadow-row: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-control: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --shadow-marker: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-pill-active: 0 2px 8px rgba(45, 100, 60, 0.3);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -267,7 +276,7 @@
   border-radius: 9999px;
   border: 2px solid var(--natura-emerald);
   background: var(--natura-surface);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-marker);
   animation: pet-bounce 2s ease-in-out infinite;
   cursor: pointer;
   transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 200ms ease;
@@ -320,7 +329,7 @@
   border-radius: 9999px;
   overflow: hidden;
   border: 2px solid var(--natura-amber);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-marker);
   background: var(--natura-surface);
 }
 .dino-photo-marker-img {
@@ -349,7 +358,7 @@
 }
 .sidebar-item:hover {
   transform: translateX(3px);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-row);
 }
 
 /* Map controls */
@@ -358,7 +367,7 @@
 }
 .map-control-btn:hover {
   transform: scale(1.08);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-control);
 }
 
 /* ─── Content animations ────────────────────────── */
@@ -542,5 +551,5 @@
 .region-pill-active {
   background: linear-gradient(135deg, var(--natura-forest), var(--natura-emerald));
   color: white;
-  box-shadow: 0 2px 8px rgba(45, 100, 60, 0.3);
+  box-shadow: var(--shadow-pill-active);
 }

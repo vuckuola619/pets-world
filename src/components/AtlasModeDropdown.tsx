@@ -111,11 +111,11 @@ export default function AtlasModeDropdown({
           <TileIcon size={16} className="drop-shadow-sm" />
         </div>
         <div className="hidden flex-col sm:flex">
-          <span className="flex items-center gap-1 text-sm font-semibold font-[var(--font-heading)] leading-tight text-foreground">
+          <span className="flex items-center gap-1 text-sm font-semibold font-heading leading-tight text-foreground">
             {heading}
             <ChevronDown size={13} className={chevronClass} />
           </span>
-          <span className="text-[10px] leading-tight text-muted-foreground">
+          <span className="text-micro leading-tight text-muted-foreground">
             {count} {isPrehistoric ? strings.dinosaurUnit : strings.countries} · {regionCount} Regions
           </span>
         </div>

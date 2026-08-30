@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO } from "../../lib/motion";
 import confetti from "canvas-confetti";
 import { ArrowLeft, Gamepad2, Flame, Sparkles, Trophy, Check, X, BadgeCheck, BookOpen, RotateCcw } from "lucide-react";
 import { useMapStore } from "../../store/useMapStore";
@@ -63,7 +64,7 @@ function MysteryImage({ question, revealed }: { question: QuizQuestion; revealed
       className="relative mx-auto w-full max-w-sm overflow-hidden rounded-2xl"
       style={{ aspectRatio: '4/3', background: 'var(--accent)' }}
       animate={revealed && !reduceMotion ? { filter: 'blur(0px)', scale: 1 } : { filter: 'blur(26px)', scale: 1.04 }}
-      transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
     >
       <Image
         src={src}
@@ -97,7 +98,7 @@ function ScoreRing({ correct, total }: { correct: number; total: number }): Reac
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: circumference * (1 - ratio) }}
-          transition={{ duration: 1.1, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
+          transition={{ duration: 1.1, ease: EASE_OUT_EXPO, delay: 0.2 }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -228,7 +229,7 @@ export default function QuizView(): React.JSX.Element {
                 initial={reduceMotion ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
               >
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
                   <Sparkles size={30} className="text-white" aria-hidden />
@@ -243,7 +244,7 @@ export default function QuizView(): React.JSX.Element {
                   <Gamepad2 size={16} aria-hidden />
                   {tr.quiz.start}
                 </button>
-                <div className="mt-3 text-[11px] text-white/70">{tr.quiz.roundsInfo}</div>
+                <div className="mt-3 text-micro text-white/70">{tr.quiz.roundsInfo}</div>
               </motion.section>
             )}
 
@@ -255,10 +256,10 @@ export default function QuizView(): React.JSX.Element {
                 initial={reduceMotion ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
               >
                 {/* Progress */}
-                <div className="flex items-center justify-between text-[11px] font-medium text-white/80">
+                <div className="flex items-center justify-between text-micro font-medium text-white/80">
                   <span>{fill(tr.quiz.questionOf, { current: index + 1, total: questions.length })}</span>
                   <span>{Math.round((answeredCount / questions.length) * 100)}%</span>
                 </div>
@@ -267,7 +268,7 @@ export default function QuizView(): React.JSX.Element {
                     className="h-full rounded-full"
                     style={{ background: 'linear-gradient(90deg, var(--natura-sage), var(--primary-foreground))' }}
                     animate={{ width: `${(answeredCount / questions.length) * 100}%` }}
-                    transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                    transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
                   />
                 </div>
 
@@ -279,7 +280,7 @@ export default function QuizView(): React.JSX.Element {
                     initial={reduceMotion ? false : { opacity: 0, x: 40 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -40 }}
-                    transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
+                    transition={{ duration: 0.28, ease: EASE_OUT_EXPO }}
                   >
                     {question.kind === 'blur' && <MysteryImage question={question} revealed={picked !== null} />}
                     {question.kind === 'fact' && (
@@ -305,7 +306,7 @@ export default function QuizView(): React.JSX.Element {
                             disabled={revealed}
                             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1], delay: reduceMotion ? 0 : Math.min(i * 0.04, 0.2) }}
+                            transition={{ duration: 0.22, ease: EASE_OUT_EXPO, delay: reduceMotion ? 0 : Math.min(i * 0.04, 0.2) }}
                             whileTap={revealed || reduceMotion ? undefined : { scale: 0.97 }}
                             className={`flex items-center gap-2.5 rounded-2xl border-2 px-4 py-3 text-left text-sm font-medium outline-none transition-colors duration-200 ${
                               showCorrect
@@ -317,7 +318,7 @@ export default function QuizView(): React.JSX.Element {
                                 : 'border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent/70'
                             }`}
                           >
-                            <kbd className="hidden h-5 w-5 shrink-0 items-center justify-center rounded border border-border bg-accent text-[10px] font-bold text-muted-foreground sm:flex" aria-hidden>
+                            <kbd className="hidden h-5 w-5 shrink-0 items-center justify-center rounded border border-border bg-accent text-micro font-bold text-muted-foreground sm:flex" aria-hidden>
                               {i + 1}
                             </kbd>
                             {iucnDot && <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: iucnDot }} aria-hidden />}
@@ -383,7 +384,7 @@ export default function QuizView(): React.JSX.Element {
                 className="mt-8 rounded-3xl border border-white/25 bg-white/10 p-8 text-center shadow-xl backdrop-blur-md"
                 initial={reduceMotion ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
               >
                 {(result.isPerfect || result.isNewBest) && (
                   <motion.div
@@ -403,18 +404,18 @@ export default function QuizView(): React.JSX.Element {
                 </div>
                 <div className="mx-auto mt-4 grid max-w-xs grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-white/10 px-3 py-2.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-white/70">{tr.quiz.bestStreak}</div>
+                    <div className="text-micro font-semibold uppercase tracking-wider text-white/70">{tr.quiz.bestStreak}</div>
                     <div className="font-heading text-lg font-bold text-white">{result.streak}</div>
                   </div>
                   <div className="rounded-2xl bg-white/10 px-3 py-2.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-white/70">{tr.quiz.accuracy}</div>
+                    <div className="text-micro font-semibold uppercase tracking-wider text-white/70">{tr.quiz.accuracy}</div>
                     <div className="font-heading text-lg font-bold text-white">{Math.round((result.correct / result.total) * 100)}%</div>
                   </div>
                 </div>
 
                 {/* Badges */}
                 <div className="mt-6">
-                  <div className="text-[11px] font-semibold uppercase tracking-widest text-white/70">{tr.quiz.badgesTitle}</div>
+                  <div className="text-micro font-semibold uppercase tracking-widest text-white/70">{tr.quiz.badgesTitle}</div>
                   <div className="mt-3 flex flex-wrap justify-center gap-2.5">
                     {badgeState(stats).map((badge, i) => {
                       const label = tr.quiz[`badge${badge.key === 'firstRound' ? 'FirstRound' : badge.key === 'perfect' ? 'Perfect' : badge.key === 'streak' ? 'Streak' : 'Dino'}` as keyof typeof tr.quiz] as string;
@@ -430,7 +431,7 @@ export default function QuizView(): React.JSX.Element {
                         >
                           <BadgeCheck size={22} className={badge.earned ? 'text-white' : 'text-white/50'} aria-hidden />
                           <span className="text-xs font-semibold text-white">{label}</span>
-                          <span className="text-[10px] leading-tight text-white/70">{badge.earned ? desc : tr.quiz.lockedBadge}</span>
+                          <span className="text-micro leading-tight text-white/70">{badge.earned ? desc : tr.quiz.lockedBadge}</span>
                         </motion.div>
                       );
                     })}
@@ -454,7 +455,7 @@ export default function QuizView(): React.JSX.Element {
                     {tr.quiz.backToAtlas}
                   </Link>
                 </div>
-                <div className="mt-4 text-[11px] text-white/70">
+                <div className="mt-4 text-micro text-white/70">
                   {tr.quiz.gamesPlayed}: {stats.gamesPlayed}
                 </div>
               </motion.section>

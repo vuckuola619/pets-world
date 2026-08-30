@@ -20,7 +20,9 @@ import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 import { localDinoThumb } from "../lib/wikiImages";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
-import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
+import { IUCN_CONFIG, statusCodeFor, IUCN_FALLBACK } from "../lib/iucn";
+import { CLUSTER_COLOR } from "../lib/mapColors";
+import IucnDot from "./IucnDot";
 import MapControls from "./MapControls";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
 import { translateCountry, getEntryFunFacts } from "../lib/profileText";
@@ -59,13 +61,6 @@ const MAP_CANVAS_FILTERS: Record<MapStyleName, string> = {
 const PREHISTORIC_CANVAS_FILTER =
   "sepia(0.32) saturate(0.85) hue-rotate(-8deg) brightness(1.02)";
 
-/** Cluster bubble color per atlas mode: wildlife emerald vs fossil amber.
- *  Literal hexes — maplibre paint properties cannot read CSS vars. */
-const CLUSTER_COLORS: Record<"wildlife" | "prehistoric", string> = {
-  wildlife: "#2e7d54",
-  prehistoric: "#b9791e",
-};
-
 function composeCanvasFilter(style: MapStyleName, prehistoric: boolean): string {
   const base = MAP_CANVAS_FILTERS[style];
   if (!prehistoric) return base;
@@ -86,14 +81,14 @@ interface MapViewProps {
   setViewState: React.Dispatch<React.SetStateAction<ViewState>>;
 }
 
-/** Maps conservation status string to IUCN code */
+/** Maps conservation status string to IUCN code (unmapped → DD) */
 function getIucnCode(conservationStatus: string): string {
-  return STATUS_CODE[conservationStatus] || 'LC';
+  return statusCodeFor(conservationStatus);
 }
 
 /** Returns the background color for a conservation status */
 function iucnColor(status: string): string {
-  return IUCN_CONFIG[getIucnCode(status)]?.bg ?? '#888';
+  return IUCN_CONFIG[getIucnCode(status)]?.bg ?? IUCN_FALLBACK;
 }
 
 /** Interactive map with markers, clustering, and detail popups */
@@ -218,7 +213,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     layout: { visibility: isPrehistoric ? "none" : "visible" },
     paint: {
       "circle-radius": ["step", ["get", "point_count"], 14, 100, 20, 750, 28],
-      "circle-color": CLUSTER_COLORS[isPrehistoric ? "prehistoric" : "wildlife"],
+      "circle-color": CLUSTER_COLOR[atlasMode],
       "circle-opacity": 0.85,
       "circle-stroke-width": 3,
       "circle-stroke-color": "rgba(255,255,255,0.8)",
@@ -431,11 +426,11 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                   <span className="text-lg">{hovered.emoji}</span>
                   <span className="font-medium text-foreground">{hovered.animal}</span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                <div className="mt-1.5 text-micro text-muted-foreground leading-relaxed line-clamp-2">
                   {getEntryFunFacts(hovered, locale)[0]}
                 </div>
                 <div
-                  className="mt-2 text-[10px] px-2 py-0.5 rounded-full inline-block font-medium"
+                  className="mt-2 text-micro px-2 py-0.5 rounded-full inline-block font-medium"
                   style={{
                     background: `${CONTINENT_COLORS[hovered.region]}15`,
                     color: CONTINENT_COLORS[hovered.region],
@@ -507,8 +502,8 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                 </div>
                 <div className="mt-1 flex items-start gap-2">
                   <div className="min-w-0">
-                    <div className="font-semibold leading-tight text-foreground font-[var(--font-heading)]">{selected.animal}</div>
-                    <div className="text-[11px] text-muted-foreground italic leading-tight mt-0.5">{selected.scientificName}</div>
+                    <div className="font-semibold leading-tight text-foreground font-heading">{selected.animal}</div>
+                    <div className="text-micro text-muted-foreground italic leading-tight mt-0.5">{selected.scientificName}</div>
                   </div>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
@@ -528,23 +523,23 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                   </button>
                 </div>
                 <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                  <div className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--accent)', color: 'var(--natura-emerald)' }}>
+                  <div className="text-micro px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--accent)', color: 'var(--natura-emerald)' }}>
                     {tr.classification[selected.classification as keyof typeof tr.classification] ?? selected.classification}
                   </div>
                   <div
-                    className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                    className="text-micro px-2 py-0.5 rounded-full font-bold"
                     style={{
-                      background: `${IUCN_CONFIG[STATUS_CODE[selected.conservationStatus] || 'LC']?.bg ?? '#888'}20`,
-                      color: IUCN_CONFIG[STATUS_CODE[selected.conservationStatus] || 'LC']?.bg ?? '#888',
+                      background: `${IUCN_CONFIG[getIucnCode(selected.conservationStatus)]?.bg ?? IUCN_FALLBACK}20`,
+                      color: IUCN_CONFIG[getIucnCode(selected.conservationStatus)]?.bg ?? IUCN_FALLBACK,
                     }}
                   >
-                    {STATUS_CODE[selected.conservationStatus] || 'LC'} · {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
+                    {getIucnCode(selected.conservationStatus)} · {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
                   </div>
-                  <div className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${CONTINENT_COLORS[selected.region]}15`, color: CONTINENT_COLORS[selected.region] }}>
+                  <div className="text-micro px-2 py-0.5 rounded-full font-medium" style={{ background: `${CONTINENT_COLORS[selected.region]}15`, color: CONTINENT_COLORS[selected.region] }}>
                     {tr.regions[selected.region as keyof typeof tr.regions] ?? selected.region}
                   </div>
                 </div>
-                <ul className="mt-2.5 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                <ul className="mt-2.5 space-y-1.5 text-micro text-muted-foreground leading-relaxed">
                   {getEntryFunFacts(selected, locale).slice(0, 3).map((f, i) => (
                     <li key={i} className="flex gap-1.5">
                       <span className="shrink-0 text-xs font-bold" style={{ color: CONTINENT_COLORS[selected.region] }}>{i + 1}.</span>
@@ -557,7 +552,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     href={selected.wikiUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-micro font-semibold text-primary hover:underline"
                   >
                     <BookOpen size={12} aria-hidden /> Wikipedia Reference
                   </a>
@@ -582,35 +577,37 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
       {/* IUCN Legend with full status names on hover */}
       <div className="hidden md:block absolute bottom-4 left-4 z-10">
         <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible" }}>
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title={tr.iucnInfo.intro}>
+          <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title={tr.iucnInfo.intro}>
             IUCN Conservation Status
           </div>
-          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5" style={{ overflow: "visible" }}>
-            {["LC", "NT", "VU", "EN", "CR", "EX"].map((code) => {
+          <div className="grid grid-cols-4 gap-x-3 gap-y-1.5" style={{ overflow: "visible" }}>
+            {["LC", "NT", "VU", "EN", "CR", "EX", "DD", "NE"].map((code) => {
               const config = IUCN_CONFIG[code];
               const info = tr.iucnInfo[code as keyof typeof tr.iucnInfo];
               return (
                 <div key={code} className="flex items-center gap-1.5 group cursor-help relative" title={config?.label ?? code}>
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/5 group-hover:scale-125 transition-transform duration-200"
-                    style={{ background: config?.bg ?? "#888" }}
+                  <IucnDot
+                    code={code}
+                    color={config?.bg}
+                    size={10}
+                    className="transition-transform duration-200 group-hover:scale-125"
                   />
-                  <span className="text-[10px] text-foreground/80 font-medium group-hover:text-foreground transition-colors">{code}</span>
+                  <span className="text-micro text-foreground/80 font-medium group-hover:text-foreground transition-colors">{code}</span>
                   {/* Educational tooltip: full name + what it means */}
                   <div
                     className="absolute bottom-full left-0 mb-1.5 w-52 normal-case tracking-normal text-left opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
                     style={{ zIndex: 50 }}
                   >
                     <div className="glass-card rounded-lg px-2.5 py-2 shadow-lg">
-                      <div className="text-[10px] font-bold text-foreground">{config?.label ?? code}</div>
-                      <div className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{info}</div>
+                      <div className="text-micro font-bold text-foreground">{config?.label ?? code}</div>
+                      <div className="mt-0.5 text-micro leading-snug text-muted-foreground">{info}</div>
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-          <div className="mt-1.5 text-[10px] text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
+          <div className="mt-1.5 text-micro text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
         </div>
       </div>
     </main>

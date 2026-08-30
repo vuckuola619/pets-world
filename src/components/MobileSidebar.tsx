@@ -12,10 +12,10 @@ import { useFilteredAnimals } from "../hooks/useAnimals";
 import { useInstallPrompt } from "../hooks/useInstallPrompt";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
+import { SHEET_SPRING } from "../lib/motion";
 
-import { CONTINENT_COLORS } from "../lib/regions";
+import { regionColor } from "../lib/regions";
 
-const SHEET_SPRING = { type: "spring", duration: 0.5, bounce: 0.2 } as const;
 
 /** Mobile sidebar sheet with search, region filters, and animal list.
  *  Radix Dialog owns a11y; motion owns the slide-up/down and the
@@ -145,7 +145,7 @@ export default function MobileSidebar(): React.JSX.Element {
                     {filtered.map((c, i) => {
                       const isSelected = selectedId === c.id;
                       const isHovered = sidebarHoveredId === c.id;
-                      const color = CONTINENT_COLORS[c.region] || "#6366f1";
+                      const color = regionColor(c.region);
                       return (
                         <button
                           key={c.id}

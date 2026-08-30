@@ -23,3 +23,15 @@ export const STATUS_CODE: Record<string, string> = {
   'Data Deficient': 'DD',
   'Extinct': 'EX',
 } as const;
+
+/** Gray used when a status code has no entry in IUCN_CONFIG (canvas paint
+ *  properties and inline styles can't read CSS vars). Central so every
+ *  surface degrades identically. */
+export const IUCN_FALLBACK = '#888';
+
+/** Single source of truth for status name → code, including the fallback.
+ *  Unmapped statuses become DD (Data Deficient) — an honest "we don't know"
+ *  instead of silently claiming Least Concern. */
+export function statusCodeFor(status: string): string {
+  return STATUS_CODE[status] ?? 'DD'
+}

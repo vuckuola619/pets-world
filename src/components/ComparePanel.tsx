@@ -3,12 +3,14 @@ import React from 'react';
 
 import { X, GitCompareArrows } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO } from "../lib/motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { getAtlasRecords } from "../hooks/useAtlasAnimals";
-import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
+import { IUCN_CONFIG, statusCodeFor, IUCN_FALLBACK } from "../lib/iucn";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
+import IucnDot from "./IucnDot";
 import { localDinoThumb } from "../lib/wikiImages";
 import { t } from "../lib/i18n";
 import { translateCountry, getEntryFunFacts, getQuickHabitat, intervalMap, habitMap } from "../lib/profileText";
@@ -30,7 +32,7 @@ function CompareBar({ label, values, unit, format }: {
   const colors = ['var(--natura-emerald)', 'var(--natura-ocean)', 'var(--natura-coral)'];
   return (
     <div className="space-y-1.5">
-      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
       {values.map((v, i) => (
         <div key={i} className="flex items-center gap-2">
           <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background: 'var(--accent)' }}>
@@ -38,7 +40,7 @@ function CompareBar({ label, values, unit, format }: {
               className="h-full rounded-full"
               initial={{ width: 0 }}
               animate={{ width: v !== null ? `${(v / max) * 100}%` : '0%' }}
-              transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+              transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
               style={{
                 background: colors[i],
                 minWidth: v !== null ? '8px' : '0',
@@ -57,7 +59,7 @@ function CompareBar({ label, values, unit, format }: {
 function CompareAnimalHeader({ animal }: { animal: AnimalEntry }): React.JSX.Element {
   const { imageUrl, imageLoading } = useAnimalMedia(animal.animal, animal.wikiUrl, animal.imageUrl);
   const [hasError, setHasError] = React.useState(false);
-  const code = STATUS_CODE[animal.conservationStatus as keyof typeof STATUS_CODE] || 'LC';
+  const code = statusCodeFor(animal.conservationStatus);
   const iucn = IUCN_CONFIG[code as keyof typeof IUCN_CONFIG];
   const { locale } = useMapStore();
 
@@ -75,13 +77,13 @@ function CompareAnimalHeader({ animal }: { animal: AnimalEntry }): React.JSX.Ele
           />
         )}
       </div>
-      <div className="font-semibold text-foreground text-sm font-[var(--font-heading)]">{animal.animal}</div>
-      <div className="text-[11px] text-muted-foreground italic">{animal.scientificName}</div>
+      <div className="font-semibold text-foreground text-sm font-heading">{animal.animal}</div>
+      <div className="text-micro text-muted-foreground italic">{animal.scientificName}</div>
       <div className="mt-2 flex items-center justify-center gap-1.5">
-        <span className="w-2 h-2 rounded-full" style={{ background: iucn?.bg ?? '#888' }} />
-        <span className="text-[10px] font-bold" style={{ color: iucn?.bg ?? '#888' }}>{code}</span>
+        <IucnDot code={code} color={iucn?.bg} />
+        <span className="text-micro font-bold" style={{ color: iucn?.bg ?? IUCN_FALLBACK }}>{code}</span>
       </div>
-      <div className="text-[10px] text-muted-foreground mt-1">{animal.flag} {translateCountry(animal.country, locale)}</div>
+      <div className="text-micro text-muted-foreground mt-1">{animal.flag} {translateCountry(animal.country, locale)}</div>
     </div>
   );
 }
@@ -106,7 +108,7 @@ export default function ComparePanel(): React.JSX.Element {
           initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
-          transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
         >
           <div className="glass-card rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3">
             <GitCompareArrows size={16} className="text-muted-foreground shrink-0" />
@@ -192,7 +194,7 @@ export function CompareModal(): React.JSX.Element {
                 initial={reduceMotion ? false : { opacity: 0, scale: 0.96, x: '-50%', y: '-48%' }}
                 animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, x: '-50%', y: '-48%' }}
-                transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
               >
                 <Dialog.Title className="sr-only">{tr.compare.title}</Dialog.Title>
                 <Dialog.Description className="sr-only">{tr.compare.funFacts}</Dialog.Description>
@@ -201,7 +203,7 @@ export function CompareModal(): React.JSX.Element {
                 <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
                   <div className="flex items-center gap-2">
                     <GitCompareArrows size={18} className="text-primary" />
-                    <h2 className="text-lg font-semibold text-foreground font-[var(--font-heading)]">{tr.compare.title}</h2>
+                    <h2 className="text-lg font-semibold text-foreground font-heading">{tr.compare.title}</h2>
                   </div>
                   <button onClick={() => setCompareOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors" aria-label={tr.close}>
                     <X size={20} />
@@ -220,7 +222,7 @@ export function CompareModal(): React.JSX.Element {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {(['classification', 'diet', 'region', 'habitat'] as const).map((field) => (
                       <div key={field} className="glass-card rounded-xl p-3">
-                        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                        <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                           {tr.detail[field as keyof typeof tr.detail] ?? field}
                         </div>
                         {animals.map((a) => {
@@ -258,7 +260,7 @@ export function CompareModal(): React.JSX.Element {
 
                   {/* Fun Facts comparison */}
                   <div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tr.compare.funFacts}</div>
+                    <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider mb-3">{tr.compare.funFacts}</div>
                     <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${animals.length}, 1fr)` }}>
                       {animals.map((a) => {
                         const facts = getEntryFunFacts(a, locale);
@@ -266,7 +268,7 @@ export function CompareModal(): React.JSX.Element {
                           <div key={a.id} className="space-y-2">
                             <div className="text-xs font-medium text-foreground flex items-center gap-1">{a.emoji} {a.animal}</div>
                             {facts.slice(0, 3).map((f, i) => (
-                              <div key={i} className="text-[11px] text-muted-foreground leading-relaxed glass-card rounded-lg p-2">
+                              <div key={i} className="text-micro text-muted-foreground leading-relaxed glass-card rounded-lg p-2">
                                 {f}
                               </div>
                             ))}
