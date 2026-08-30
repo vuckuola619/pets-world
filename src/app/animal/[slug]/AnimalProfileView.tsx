@@ -238,8 +238,8 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <StatCard icon="🏷️" label={t(locale).detail.classification} value={classification} />
           <StatCard icon="🍽️" label={t(locale).detail.diet} value={diet} />
-          {animal.lifespan && <StatCard icon="⏱️" label={t(locale).detail.lifespan} value={lifespanValue} />}
-          {animal.weight && <StatCard icon="⚖️" label={t(locale).detail.weight} value={weightValue} />}
+          {animal.lifespan && animal.lifespan.max > 0 && <StatCard icon="⏱️" label={t(locale).detail.lifespan} value={lifespanValue} />}
+          {animal.weight && animal.weight.max > 0 && <StatCard icon="⚖️" label={t(locale).detail.weight} value={weightValue} />}
         </div>
 
         {/* Population Trend Chart */}

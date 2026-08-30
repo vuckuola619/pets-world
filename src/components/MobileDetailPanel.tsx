@@ -1,7 +1,7 @@
 "use client"
 import React from 'react';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
 import { X, Volume2, GitCompareArrows, BookOpen } from "lucide-react";
@@ -36,6 +36,20 @@ export default function MobileDetailPanel(): React.JSX.Element {
   const reduceMotion = useReducedMotion();
   const dragControls = useDragControls();
   const isPrehistoric = atlasMode === 'prehistoric';
+  // The sheet shares `selectedId` with the desktop popup. On desktop the sheet
+  // is only hidden via CSS — an open-but-invisible Radix Dialog still runs its
+  // dismiss-on-interact-outside behavior, so ANY later pointer-down (sidebar
+  // row, next marker) cleared the selection, unmounted the popup, and replayed
+  // its fade. Only mount the dialog on real mobile viewports.
+  const [isMobileViewport, setIsMobileViewport] = useState(true);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return; // jsdom/test envs
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobileViewport(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
   const selected = selectedId ? getAtlasRecords(atlasMode).find((c) => c.id === selectedId) ?? null : null;
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -60,9 +74,9 @@ export default function MobileDetailPanel(): React.JSX.Element {
   };
 
   return (
-    <Dialog.Root open={!!selected} onOpenChange={(open) => { if (!open) dismiss(); }}>
+    <Dialog.Root open={!!selected && isMobileViewport} onOpenChange={(open) => { if (!open) dismiss(); }}>
       <AnimatePresence>
-        {selected && (() => {
+        {selected && isMobileViewport && (() => {
           const animal = selected;
           const color = CONTINENT_COLORS[animal.region] || "#6366f1";
           const iucnCode = STATUS_CODE[animal.conservationStatus] || 'LC';
@@ -121,7 +135,7 @@ export default function MobileDetailPanel(): React.JSX.Element {
                   <X size={22} className="text-muted-foreground" />
                 </button>
 
-                <div className="overflow-y-auto p-4 pt-2 pb-8 scrollbar-thin">
+                <div className="overflow-y-auto p-4 pt-2 scrollbar-thin" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}>
                   {/* Image */}
                   <div className="w-full rounded-xl overflow-hidden mb-3" style={{ aspectRatio: '16/9', maxHeight: 240, background: 'var(--accent)' }}>
                     {imageLoading || (!imageUrl || hasImgError) ? (

@@ -66,6 +66,7 @@ export default function MobileSidebar(): React.JSX.Element {
               <Dialog.Content asChild forceMount aria-label={tr.search}>
                 <motion.aside
                   className="fixed inset-x-0 bottom-0 z-30 flex max-h-[60vh] flex-col gap-3 rounded-t-2xl border-t border-border bg-card p-4 outline-none md:hidden"
+                  style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
                   initial={reduceMotion ? { y: 0, opacity: 0 } : { y: '100%' }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={reduceMotion ? { opacity: 0 } : { y: '100%' }}

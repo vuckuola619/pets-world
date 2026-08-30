@@ -114,6 +114,15 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const { isFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
+  /* Viewport size tracked in state so the popup reacts to window resizes
+     instead of reading window.innerWidth during render. */
+  const [viewport, setViewport] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    const read = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
+  }, []);
   const popupRef = useRef<HTMLDivElement>(null);
   const CARD_W = 260;
   const IMG_SIZE = 200;
@@ -150,6 +159,12 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   function projectToScreen(id: string): { x: number; y: number } | null {
     return markerScreenPos[id] ?? null;
   }
+
+  /* Container resizes change projections but fire no move event — refresh
+     marker screen positions so the popup follows. */
+  const onMapResize = useCallback(() => {
+    updateMarkerScreenPos(filtered);
+  }, [updateMarkerScreenPos, filtered]);
 
   const playSound = useCallback(() => {
     if (!selected) return;
@@ -335,6 +350,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         ref={mapRef}
         {...viewState}
         onMove={onMapMove}
+        onResize={onMapResize}
         onLoad={() => {
           setIsMapLoaded(true);
           /* Apply CSS filter to canvas for the active style + atlas mode */
@@ -438,12 +454,12 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         {selected && (() => {
           const pos = projectToScreen(selected.id);
           if (!pos) return null;
-          if (window.innerWidth < 768) return null;
+          if (!viewport || viewport.w < 768) return null;
           const ph = 520;
           const pw = CARD_W;
           const GAP = 16;
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
+          const vw = viewport.w;
+          const vh = viewport.h;
           // Prefer right side, fallback to left if not enough space
           const fitsRight = pos.x + GAP + pw < vw - 8;
           const fitsLeft = pos.x - GAP - pw > 8;

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import AnimalProfileView from './AnimalProfileView'
 import { getAtlasProfileBySlug, getAtlasProfileStaticParams } from '@/data/atlasProfiles'
 
@@ -71,7 +72,7 @@ function SpeciesJsonLd({ animal }: { animal: NonNullable<ReturnType<typeof getAt
 export default async function AnimalDetailPage({ params }: Props): Promise<React.JSX.Element> {
   const { slug } = await params
   const animal = getAtlasProfileBySlug(slug)
-  if (!animal) return <div>Not found</div>;
+  if (!animal) notFound()
   return (
     <>
       <SpeciesJsonLd animal={animal} />
