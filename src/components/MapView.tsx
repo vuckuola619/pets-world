@@ -32,24 +32,47 @@ import Image from "next/image";
 import Link from "next/link";
 import { CONTINENT_COLORS } from "../lib/regions";
 
-/** Keyless OpenFreeMap vector styles (https://openfreemap.org) — free with no
- *  API key or usage cap; the hosted style ships glyphs for cluster labels. */
+/** Keyless basemap styles — no API key or usage cap. Color/Minimal use
+ *  OpenFreeMap (https://openfreemap.org, ships glyphs for cluster labels);
+ *  Dark uses Carto Dark Matter for a true dark basemap instead of a CSS
+ *  invert hack that also tinted the canvas-drawn cluster bubbles. Carto
+ *  tiles live under *.basemaps.cartocdn.com — keep CSP connect-src in
+ *  public/_headers in sync when touching this list. */
 const OFM_BASE = "https://tiles.openfreemap.org/styles";
 
 const STYLES: Record<MapStyleName, string> = {
   voyager: `${OFM_BASE}/liberty`,
-  dark: `${OFM_BASE}/positron`,
-  satellite: `${OFM_BASE}/positron`,
+  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  minimal: `${OFM_BASE}/positron`,
 };
 
-/** CSS filter applied to the .maplibregl-canvas for each style.
- *  OpenFreeMap has no native dark style: Dark mode inverts Positron's canvas,
- *  Minimal (satellite key) desaturates it. */
+/** CSS filter applied to the .maplibregl-canvas per style. Only Minimal
+ *  still needs one (a desaturated Positron); Dark is a native dark style. */
 const MAP_CANVAS_FILTERS: Record<MapStyleName, string> = {
   voyager: "none",
-  dark: "invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85)",
-  satellite: "grayscale(1) brightness(1.02) contrast(0.92)",
+  dark: "none",
+  minimal: "grayscale(1) brightness(1.02) contrast(0.92)",
 };
+
+/** Era Purba tints the basemap toward a warm fossil palette (dinosaur-era
+ *  spec). Composed on top of the per-style filter. */
+const PREHISTORIC_CANVAS_FILTER =
+  "sepia(0.32) saturate(0.85) hue-rotate(-8deg) brightness(1.02)";
+
+/** Cluster bubble color per atlas mode: wildlife emerald vs fossil amber.
+ *  Literal hexes — maplibre paint properties cannot read CSS vars. */
+const CLUSTER_COLORS: Record<"wildlife" | "prehistoric", string> = {
+  wildlife: "#2e7d54",
+  prehistoric: "#b9791e",
+};
+
+function composeCanvasFilter(style: MapStyleName, prehistoric: boolean): string {
+  const base = MAP_CANVAS_FILTERS[style];
+  if (!prehistoric) return base;
+  return base === "none"
+    ? PREHISTORIC_CANVAS_FILTER
+    : `${base} ${PREHISTORIC_CANVAS_FILTER}`;
+}
 
 interface ViewState {
   longitude: number;
@@ -180,7 +203,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     layout: { visibility: isPrehistoric ? "none" : "visible" },
     paint: {
       "circle-radius": ["step", ["get", "point_count"], 14, 100, 20, 750, 28],
-      "circle-color": "#2e7d54",
+      "circle-color": CLUSTER_COLORS[isPrehistoric ? "prehistoric" : "wildlife"],
       "circle-opacity": 0.85,
       "circle-stroke-width": 3,
       "circle-stroke-color": "rgba(255,255,255,0.8)",
@@ -281,11 +304,29 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     const features = map.queryRenderedFeatures(evt.point, { layers });
     map.getCanvas().style.cursor = features.length ? "pointer" : "";
   }, []);
-  /* Apply CSS filter to map canvas whenever style changes */
+  /* Apply CSS filter to map canvas whenever style or atlas mode changes */
   useEffect(() => {
     const canvas = mapRef.current?.getMap()?.getCanvas();
-    if (canvas) canvas.style.filter = MAP_CANVAS_FILTERS[mapStyle];
-  }, [mapStyle]);
+    if (canvas) canvas.style.filter = composeCanvasFilter(mapStyle, isPrehistoric);
+  }, [mapStyle, isPrehistoric]);
+
+  /* Camera follows selections made outside the map (sidebar, ⌘K palette,
+     mobile sheet). The nonce lets the same coordinates re-trigger. Marker
+     clicks keep their existing instant recenter — only out-of-map selection
+     needs the camera to travel. */
+  const focusTarget = useMapStore((s) => s.focusTarget);
+  useEffect(() => {
+    if (!focusTarget) return;
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const zoom = Math.max(map.getZoom(), 4);
+    const center: [number, number] = [focusTarget.lng, focusTarget.lat];
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      map.jumpTo({ center, zoom });
+    } else {
+      map.flyTo({ center, zoom });
+    }
+  }, [focusTarget]);
 
   return (
     <main className="relative flex-1">
@@ -296,9 +337,9 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         onMove={onMapMove}
         onLoad={() => {
           setIsMapLoaded(true);
-          /* Apply CSS filter to canvas for dark/minimal modes */
+          /* Apply CSS filter to canvas for the active style + atlas mode */
           const canvas = mapRef.current?.getMap()?.getCanvas();
-          if (canvas) canvas.style.filter = MAP_CANVAS_FILTERS[mapStyle];
+          if (canvas) canvas.style.filter = composeCanvasFilter(mapStyle, isPrehistoric);
           updateMarkerScreenPos(filtered);
         }}
         style={{ width: "100%", height: "100%" }}

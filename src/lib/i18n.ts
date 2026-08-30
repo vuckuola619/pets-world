@@ -150,6 +150,13 @@ export const translations = {
       offline: 'Anda sedang offline',
       online: 'Kembali online',
     },
+    toasts: {
+      compareLimit: 'Perbandingan maksimal 3 spesies',
+      linkCopied: 'Tautan disalin',
+    },
+    install: {
+      title: 'Pasang Aplikasi',
+    },
     ar: {
       title: 'Mode AR',
       notSupported: 'AR tidak tersedia',
@@ -389,6 +396,13 @@ export const translations = {
     offline: {
       offline: 'You are offline',
       online: 'Back online',
+    },
+    toasts: {
+      compareLimit: 'Comparison holds up to 3 species',
+      linkCopied: 'Link copied',
+    },
+    install: {
+      title: 'Install App',
     },
     ar: {
       title: 'AR Mode',

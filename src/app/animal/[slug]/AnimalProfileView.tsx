@@ -9,6 +9,7 @@ import GeologicTimeBar from '@/components/GeologicTimeBar'
 import { localDinoThumb } from '@/lib/wikiImages'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useMapStore } from "@/store/useMapStore";
+import { useToastStore } from "@/store/useToastStore";
 import {
   type AtlasProfile,
   countryMap,
@@ -65,6 +66,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      useToastStore.getState().pushToast('linkCopied');
       setTimeout(() => setCopied(false), 2000);
     } catch { /* clipboard unavailable */ }
   }, [animal.commonName, description]);

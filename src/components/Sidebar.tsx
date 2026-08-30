@@ -130,6 +130,7 @@ export default function Sidebar(): React.JSX.Element {
 
   const flyTo = (c: AnimalEntry) => {
     useMapStore.getState().setSelectedId(c.id);
+    useMapStore.getState().setFocusTarget({ lng: c.lng, lat: c.lat });
     useMapStore.getState().setMobileOpen(false);
   };
 

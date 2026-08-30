@@ -75,6 +75,7 @@ export default function AnimalSearch(): React.JSX.Element {
     const c = records.find((x) => x.id === id);
     if (!c) return;
     setSelectedId(id);
+    useMapStore.getState().setFocusTarget({ lng: c.lng, lat: c.lat });
     setSearchQuery("");
     setActiveRegion("All");
     setSearchOpen(false);

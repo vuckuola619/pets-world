@@ -4,7 +4,7 @@ import React from 'react';
 import { useState, useCallback, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
-import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera, Gamepad2 } from "lucide-react";
+import { Shuffle, Globe, Search, Sun, Moon, Monitor, Volume2, VolumeX, Camera, Gamepad2, Download } from "lucide-react";
 import Link from "next/link";
 import { t } from "../lib/i18n";
 import { type AnimalEntry } from "../data/countries";
@@ -12,6 +12,7 @@ import { useMapStore } from "../store/useMapStore";
 import { useAtlasData } from "../hooks/useAtlasAnimals";
 import { useFilteredAnimals } from "../hooks/useAnimals";
 import { useTheme } from "../hooks/useTheme";
+import { useInstallPrompt } from "../hooks/useInstallPrompt";
 import { audioService } from "../components/AudioService";
 import Sidebar from "../components/Sidebar";
 import MobileSidebar from "../components/MobileSidebar";
@@ -61,6 +62,7 @@ export default function Home(): React.JSX.Element {
   const { atlasMode, setSelectedId, setMobileOpen, locale, setLocale, arOpen, setArOpen } = useMapStore();
   const { records, regions } = useAtlasData();
   const { theme, toggleTheme } = useTheme();
+  const { canInstall, promptInstall } = useInstallPrompt();
   const isPrehistoric = atlasMode === 'prehistoric';
 
   const flyTo = useCallback((c: AnimalEntry) => {
@@ -141,6 +143,18 @@ export default function Home(): React.JSX.Element {
             </motion.span>
           </AnimatePresence>
         </button>
+
+        {/* PWA install (desktop/tablet — mobile gets an entry in the species sheet) */}
+        {canInstall && (
+          <button
+            onClick={promptInstall}
+            className="hidden md:flex items-center gap-1.5 press px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+            title={t(locale).install.title}
+            aria-label={t(locale).install.title}
+          >
+            <Download size={15} />
+          </button>
+        )}
 
         {/* Locale toggle */}
         <button

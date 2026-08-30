@@ -3,12 +3,13 @@ import React from 'react';
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
-import { Search, Menu, X, Gamepad2 } from "lucide-react";
+import { Search, Menu, X, Gamepad2, Download } from "lucide-react";
 import Link from "next/link";
 import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { useAtlasData } from "../hooks/useAtlasAnimals";
 import { useFilteredAnimals } from "../hooks/useAnimals";
+import { useInstallPrompt } from "../hooks/useInstallPrompt";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
 
@@ -26,9 +27,11 @@ export default function MobileSidebar(): React.JSX.Element {
   const dragControls = useDragControls();
   const { regions } = useAtlasData();
   const filtered = useFilteredAnimals();
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   const flyTo = (c: AnimalEntry) => {
     useMapStore.getState().setSelectedId(c.id);
+    useMapStore.getState().setFocusTarget({ lng: c.lng, lat: c.lat });
     setMobileOpen(false);
   };
 
@@ -98,6 +101,17 @@ export default function MobileSidebar(): React.JSX.Element {
                     <Gamepad2 size={16} aria-hidden className="text-primary" />
                     {tr.quiz.title}
                   </Link>
+
+                  {/* PWA install — only when the browser fired beforeinstallprompt */}
+                  {canInstall && (
+                    <button
+                      onClick={promptInstall}
+                      className="flex items-center gap-2 rounded-xl border border-border bg-accent/50 px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                    >
+                      <Download size={16} aria-hidden className="text-primary" />
+                      {tr.install.title}
+                    </button>
+                  )}
 
                   <div className="relative">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
