@@ -8,7 +8,7 @@ import React from 'react';
  */
 /* eslint-disable react-hooks/preserve-manual-memoization */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { GitCompareArrows, Volume2, Volume1, BookOpen } from "lucide-react";
 import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -20,7 +20,9 @@ import { getAtlasRecords } from "../hooks/useAtlasAnimals";
 import { localDinoThumb } from "../lib/wikiImages";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
-import { IUCN_CONFIG, STATUS_CODE } from "../lib/iucn";
+import { IUCN_CONFIG, statusCodeFor, IUCN_FALLBACK } from "../lib/iucn";
+import { CLUSTER_COLOR } from "../lib/mapColors";
+import IucnDot from "./IucnDot";
 import MapControls from "./MapControls";
 import { useAnimalMedia } from "../hooks/useAnimalMedia";
 import { translateCountry, getEntryFunFacts } from "../lib/profileText";
@@ -32,24 +34,43 @@ import Image from "next/image";
 import Link from "next/link";
 import { CONTINENT_COLORS } from "../lib/regions";
 
-/** Keyless OpenFreeMap vector styles (https://openfreemap.org) — free with no
- *  API key or usage cap; the hosted style ships glyphs for cluster labels. */
+/** Keyless basemap styles — no API key or usage cap. Color/Minimal use
+ *  OpenFreeMap (https://openfreemap.org, ships glyphs for cluster labels);
+ *  Dark uses Carto Dark Matter for a true dark basemap instead of a CSS
+ *  invert hack that also tinted the canvas-drawn cluster bubbles. Carto
+ *  tiles live under *.basemaps.cartocdn.com — keep CSP connect-src in
+ *  public/_headers in sync when touching this list. */
 const OFM_BASE = "https://tiles.openfreemap.org/styles";
 
 const STYLES: Record<MapStyleName, string> = {
   voyager: `${OFM_BASE}/liberty`,
-  dark: `${OFM_BASE}/positron`,
-  satellite: `${OFM_BASE}/positron`,
+  dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  minimal: `${OFM_BASE}/positron`,
 };
 
-/** CSS filter applied to the .maplibregl-canvas for each style.
- *  OpenFreeMap has no native dark style: Dark mode inverts Positron's canvas,
- *  Minimal (satellite key) desaturates it. */
+/** CSS filter applied to the .maplibregl-canvas per style. Only Minimal
+ *  still needs one (a desaturated Positron); Dark is a native dark style. */
 const MAP_CANVAS_FILTERS: Record<MapStyleName, string> = {
   voyager: "none",
-  dark: "invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85)",
-  satellite: "grayscale(1) brightness(1.02) contrast(0.92)",
+  dark: "none",
+  minimal: "grayscale(1) brightness(1.02) contrast(0.92)",
 };
+
+/** Era Purba tints the basemap toward a warm fossil palette (dinosaur-era
+ *  spec). Dark needs a much stronger lift — sepia over a near-black canvas
+ *  is invisible — so the warm filter is chosen per style. */
+const PREHISTORIC_FILTER_LIGHT =
+  "sepia(0.35) saturate(0.9) hue-rotate(-10deg) brightness(1.03)";
+const PREHISTORIC_FILTER_DARK =
+  "sepia(0.5) hue-rotate(-18deg) saturate(1.05) brightness(1.3) contrast(0.95)";
+
+function composeCanvasFilter(style: MapStyleName, prehistoric: boolean): string {
+  if (!prehistoric) return MAP_CANVAS_FILTERS[style];
+  const warm =
+    style === "dark" ? PREHISTORIC_FILTER_DARK : PREHISTORIC_FILTER_LIGHT;
+  const base = MAP_CANVAS_FILTERS[style];
+  return base === "none" ? warm : `${base} ${warm}`;
+}
 
 interface ViewState {
   longitude: number;
@@ -63,14 +84,14 @@ interface MapViewProps {
   setViewState: React.Dispatch<React.SetStateAction<ViewState>>;
 }
 
-/** Maps conservation status string to IUCN code */
+/** Maps conservation status string to IUCN code (unmapped → DD) */
 function getIucnCode(conservationStatus: string): string {
-  return STATUS_CODE[conservationStatus] || 'LC';
+  return statusCodeFor(conservationStatus);
 }
 
 /** Returns the background color for a conservation status */
 function iucnColor(status: string): string {
-  return IUCN_CONFIG[getIucnCode(status)]?.bg ?? '#888';
+  return IUCN_CONFIG[getIucnCode(status)]?.bg ?? IUCN_FALLBACK;
 }
 
 /** Interactive map with markers, clustering, and detail popups */
@@ -91,9 +112,29 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const { isFavorite } = useFavorites();
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasImgError, setHasImgError] = useState(false);
+  /* Viewport size tracked in state so the popup reacts to window resizes
+     instead of reading window.innerWidth during render. */
+  const [viewport, setViewport] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    const read = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
+  }, []);
   const popupRef = useRef<HTMLDivElement>(null);
   const CARD_W = 260;
   const IMG_SIZE = 200;
+  /* Real popup height (content varies per species; the estimate overshoots
+     and pushed the card past the viewport bottom). ResizeObserver delivers
+     the initial measurement on observe — no synchronous setState needed. */
+  const [popupH, setPopupH] = useState(520);
+  useLayoutEffect(() => {
+    const el = popupRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setPopupH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [selected, imageLoading, imageUrl]);
 
   // Positions are refreshed from map events (load, move, hover, click) — a
   // popup only ever shows after one of those, so no render-time projection.
@@ -127,6 +168,23 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   function projectToScreen(id: string): { x: number; y: number } | null {
     return markerScreenPos[id] ?? null;
   }
+
+  /* Container resizes change projections but fire no move event — refresh
+     marker screen positions so the popup follows. */
+  const onMapResize = useCallback(() => {
+    updateMarkerScreenPos(filtered);
+  }, [updateMarkerScreenPos, filtered]);
+
+  /* Selections from outside the map don't move the camera themselves
+     (focusTarget flies it, but jumps/short flights may end without another
+     move event). Reproject once per list/load change so the popup never
+     stalls waiting for a map event. Deferred to a frame like onMapMove —
+     synchronous setState here trips the cascading-render rule. */
+  useEffect(() => {
+    if (!isMapLoaded) return;
+    const raf = requestAnimationFrame(() => updateMarkerScreenPos(filtered));
+    return () => cancelAnimationFrame(raf);
+  }, [isMapLoaded, filtered, updateMarkerScreenPos]);
 
   const playSound = useCallback(() => {
     if (!selected) return;
@@ -180,7 +238,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     layout: { visibility: isPrehistoric ? "none" : "visible" },
     paint: {
       "circle-radius": ["step", ["get", "point_count"], 14, 100, 20, 750, 28],
-      "circle-color": "#2e7d54",
+      "circle-color": CLUSTER_COLOR[atlasMode],
       "circle-opacity": 0.85,
       "circle-stroke-width": 3,
       "circle-stroke-color": "rgba(255,255,255,0.8)",
@@ -281,11 +339,29 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
     const features = map.queryRenderedFeatures(evt.point, { layers });
     map.getCanvas().style.cursor = features.length ? "pointer" : "";
   }, []);
-  /* Apply CSS filter to map canvas whenever style changes */
+  /* Apply CSS filter to map canvas whenever style or atlas mode changes */
   useEffect(() => {
     const canvas = mapRef.current?.getMap()?.getCanvas();
-    if (canvas) canvas.style.filter = MAP_CANVAS_FILTERS[mapStyle];
-  }, [mapStyle]);
+    if (canvas) canvas.style.filter = composeCanvasFilter(mapStyle, isPrehistoric);
+  }, [mapStyle, isPrehistoric]);
+
+  /* Camera follows selections made outside the map (sidebar, ⌘K palette,
+     mobile sheet). The nonce lets the same coordinates re-trigger. Marker
+     clicks keep their existing instant recenter — only out-of-map selection
+     needs the camera to travel. */
+  const focusTarget = useMapStore((s) => s.focusTarget);
+  useEffect(() => {
+    if (!focusTarget) return;
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const zoom = Math.max(map.getZoom(), 4);
+    const center: [number, number] = [focusTarget.lng, focusTarget.lat];
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      map.jumpTo({ center, zoom });
+    } else {
+      map.flyTo({ center, zoom });
+    }
+  }, [focusTarget]);
 
   return (
     <main className="relative flex-1">
@@ -294,11 +370,12 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         ref={mapRef}
         {...viewState}
         onMove={onMapMove}
+        onResize={onMapResize}
         onLoad={() => {
           setIsMapLoaded(true);
-          /* Apply CSS filter to canvas for dark/minimal modes */
+          /* Apply CSS filter to canvas for the active style + atlas mode */
           const canvas = mapRef.current?.getMap()?.getCanvas();
-          if (canvas) canvas.style.filter = MAP_CANVAS_FILTERS[mapStyle];
+          if (canvas) canvas.style.filter = composeCanvasFilter(mapStyle, isPrehistoric);
           updateMarkerScreenPos(filtered);
         }}
         style={{ width: "100%", height: "100%" }}
@@ -374,11 +451,11 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                   <span className="text-lg">{hovered.emoji}</span>
                   <span className="font-medium text-foreground">{hovered.animal}</span>
                 </div>
-                <div className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                <div className="mt-1.5 text-micro text-muted-foreground leading-relaxed line-clamp-2">
                   {getEntryFunFacts(hovered, locale)[0]}
                 </div>
                 <div
-                  className="mt-2 text-[10px] px-2 py-0.5 rounded-full inline-block font-medium"
+                  className="mt-2 text-micro px-2 py-0.5 rounded-full inline-block font-medium"
                   style={{
                     background: `${CONTINENT_COLORS[hovered.region]}15`,
                     color: CONTINENT_COLORS[hovered.region],
@@ -397,12 +474,12 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
         {selected && (() => {
           const pos = projectToScreen(selected.id);
           if (!pos) return null;
-          if (window.innerWidth < 768) return null;
-          const ph = 520;
+          if (!viewport || viewport.w < 768) return null;
+          const ph = popupH;
           const pw = CARD_W;
           const GAP = 16;
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
+          const vw = viewport.w;
+          const vh = viewport.h;
           // Prefer right side, fallback to left if not enough space
           const fitsRight = pos.x + GAP + pw < vw - 8;
           const fitsLeft = pos.x - GAP - pw > 8;
@@ -450,8 +527,8 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                 </div>
                 <div className="mt-1 flex items-start gap-2">
                   <div className="min-w-0">
-                    <div className="font-semibold leading-tight text-foreground font-[var(--font-heading)]">{selected.animal}</div>
-                    <div className="text-[11px] text-muted-foreground italic leading-tight mt-0.5">{selected.scientificName}</div>
+                    <div className="font-semibold leading-tight text-foreground font-heading">{selected.animal}</div>
+                    <div className="text-micro text-muted-foreground italic leading-tight mt-0.5">{selected.scientificName}</div>
                   </div>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
@@ -471,23 +548,23 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                   </button>
                 </div>
                 <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                  <div className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--accent)', color: 'var(--natura-emerald)' }}>
+                  <div className="text-micro px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--accent)', color: 'var(--natura-emerald)' }}>
                     {tr.classification[selected.classification as keyof typeof tr.classification] ?? selected.classification}
                   </div>
                   <div
-                    className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                    className="text-micro px-2 py-0.5 rounded-full font-bold"
                     style={{
-                      background: `${IUCN_CONFIG[STATUS_CODE[selected.conservationStatus] || 'LC']?.bg ?? '#888'}20`,
-                      color: IUCN_CONFIG[STATUS_CODE[selected.conservationStatus] || 'LC']?.bg ?? '#888',
+                      background: `${IUCN_CONFIG[getIucnCode(selected.conservationStatus)]?.bg ?? IUCN_FALLBACK}20`,
+                      color: IUCN_CONFIG[getIucnCode(selected.conservationStatus)]?.bg ?? IUCN_FALLBACK,
                     }}
                   >
-                    {STATUS_CODE[selected.conservationStatus] || 'LC'} · {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
+                    {getIucnCode(selected.conservationStatus)} · {tr.conservation[selected.conservationStatus as keyof typeof tr.conservation] ?? selected.conservationStatus}
                   </div>
-                  <div className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${CONTINENT_COLORS[selected.region]}15`, color: CONTINENT_COLORS[selected.region] }}>
+                  <div className="text-micro px-2 py-0.5 rounded-full font-medium" style={{ background: `${CONTINENT_COLORS[selected.region]}15`, color: CONTINENT_COLORS[selected.region] }}>
                     {tr.regions[selected.region as keyof typeof tr.regions] ?? selected.region}
                   </div>
                 </div>
-                <ul className="mt-2.5 space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                <ul className="mt-2.5 space-y-1.5 text-micro text-muted-foreground leading-relaxed">
                   {getEntryFunFacts(selected, locale).slice(0, 3).map((f, i) => (
                     <li key={i} className="flex gap-1.5">
                       <span className="shrink-0 text-xs font-bold" style={{ color: CONTINENT_COLORS[selected.region] }}>{i + 1}.</span>
@@ -500,7 +577,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
                     href={selected.wikiUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-micro font-semibold text-primary hover:underline"
                   >
                     <BookOpen size={12} aria-hidden /> Wikipedia Reference
                   </a>
@@ -524,36 +601,40 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
 
       {/* IUCN Legend with full status names on hover */}
       <div className="hidden md:block absolute bottom-4 left-4 z-10">
-        <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible" }}>
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title={tr.iucnInfo.intro}>
+        {/* Nearly-opaque backdrop: the plain glass card let bright map labels
+            and markers bleed through as ghost fragments over the codes. */}
+        <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible", background: 'color-mix(in srgb, var(--card) 97%, transparent)' }}>
+          <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title={tr.iucnInfo.intro}>
             IUCN Conservation Status
           </div>
-          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5" style={{ overflow: "visible" }}>
-            {["LC", "NT", "VU", "EN", "CR", "EX"].map((code) => {
+          <div className="grid grid-cols-4 gap-x-3 gap-y-1.5" style={{ overflow: "visible" }}>
+            {["LC", "NT", "VU", "EN", "CR", "EX", "DD", "NE"].map((code) => {
               const config = IUCN_CONFIG[code];
               const info = tr.iucnInfo[code as keyof typeof tr.iucnInfo];
               return (
                 <div key={code} className="flex items-center gap-1.5 group cursor-help relative" title={config?.label ?? code}>
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/5 group-hover:scale-125 transition-transform duration-200"
-                    style={{ background: config?.bg ?? "#888" }}
+                  <IucnDot
+                    code={code}
+                    color={config?.bg}
+                    size={10}
+                    className="transition-transform duration-200 group-hover:scale-125"
                   />
-                  <span className="text-[10px] text-foreground/80 font-medium group-hover:text-foreground transition-colors">{code}</span>
+                  <span className="text-micro text-foreground/80 font-medium group-hover:text-foreground transition-colors">{code}</span>
                   {/* Educational tooltip: full name + what it means */}
                   <div
                     className="absolute bottom-full left-0 mb-1.5 w-52 normal-case tracking-normal text-left opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
                     style={{ zIndex: 50 }}
                   >
                     <div className="glass-card rounded-lg px-2.5 py-2 shadow-lg">
-                      <div className="text-[10px] font-bold text-foreground">{config?.label ?? code}</div>
-                      <div className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{info}</div>
+                      <div className="text-micro font-bold text-foreground">{config?.label ?? code}</div>
+                      <div className="mt-0.5 text-micro leading-snug text-muted-foreground">{info}</div>
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-          <div className="mt-1.5 text-[10px] text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
+          <div className="mt-1.5 text-micro text-muted-foreground">Zoom: {viewState.zoom.toFixed(1)}x</div>
         </div>
       </div>
     </main>

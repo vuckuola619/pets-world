@@ -3,6 +3,7 @@ import React from 'react';
 
 import { useEffect, useRef } from "react";
 import { animate, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO } from "../lib/motion";
 
 interface AnimatedNumberProps {
   value: number;
@@ -31,7 +32,7 @@ export default function AnimatedNumber({ value, className = "" }: AnimatedNumber
 
     const controls = animate(previous.current, value, {
       duration: 0.45,
-      ease: [0.23, 1, 0.32, 1],
+      ease: EASE_OUT_EXPO,
       onUpdate(latest) {
         if (node) node.textContent = String(Math.round(latest));
       },

@@ -8,7 +8,7 @@ import { useMapStore, type MapStyleName } from "../store/useMapStore";
 const mapStyleLabels: Record<MapStyleName, string> = {
   voyager: "Color",
   dark: "Dark",
-  satellite: "Minimal",
+  minimal: "Minimal",
 };
 
 interface MapControlsProps {
@@ -30,7 +30,7 @@ export default function MapControls({ viewState, setViewState, onResetView }: Ma
   }, [setViewState]);
 
   const cycleMapStyle = useCallback(() => {
-    const styles: MapStyleName[] = ["voyager", "dark", "satellite"];
+    const styles: MapStyleName[] = ["voyager", "dark", "minimal"];
     const idx = (styles.indexOf(mapStyle) + 1) % styles.length;
     setMapStyle(styles[idx]);
   }, [mapStyle, setMapStyle]);

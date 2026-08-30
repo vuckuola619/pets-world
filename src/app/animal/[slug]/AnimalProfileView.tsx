@@ -2,13 +2,14 @@
 import React, { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { Heart, Share2 } from 'lucide-react'
-import { IUCN_CONFIG, STATUS_CODE } from '@/lib/iucn'
+import { IUCN_CONFIG, statusCodeFor } from '@/lib/iucn'
 import AnimalDetailsClient from './AnimalDetailsClient'
 import PopulationChart from '@/components/PopulationChart'
 import GeologicTimeBar from '@/components/GeologicTimeBar'
 import { localDinoThumb } from '@/lib/wikiImages'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useMapStore } from "@/store/useMapStore";
+import { useToastStore } from "@/store/useToastStore";
 import {
   type AtlasProfile,
   countryMap,
@@ -21,7 +22,7 @@ import { t, type TranslationStrings } from '@/lib/i18n';
 
 function SectionTitle({ children, color }: { children: React.ReactNode; color: string }): React.JSX.Element {
   return (
-    <h2 className="text-lg font-semibold text-foreground font-[var(--font-heading)] mb-3 flex items-center gap-2">
+    <h2 className="text-lg font-semibold text-foreground font-heading mb-3 flex items-center gap-2">
       <span className="w-1 h-5 rounded-full" style={{ background: color }} />
       {children}
     </h2>
@@ -33,7 +34,7 @@ function StatCard({ icon, label, value }: { icon: string; label: string; value: 
     <div className="glass-card rounded-xl px-4 py-3 group hover:shadow-md transition-all duration-200">
       <div className="flex items-center gap-1.5 mb-1">
         <span className="text-sm">{icon}</span>
-        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
+        <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
       </div>
       <div className="text-sm font-semibold text-foreground mt-0.5 group-hover:text-primary transition-colors">{value}</div>
     </div>
@@ -65,6 +66,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      useToastStore.getState().pushToast('linkCopied');
       setTimeout(() => setCopied(false), 2000);
     } catch { /* clipboard unavailable */ }
   }, [animal.commonName, description]);
@@ -113,7 +115,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
     : animal.weight?.unit;
   const weightValue = animal.weight ? `${animal.weight.min}–${animal.weight.max} ${weightUnit}` : '';
 
-  const statusCode = STATUS_CODE[animal.conservationStatus] || 'NE'
+  const statusCode = statusCodeFor(animal.conservationStatus)
   const iucn = IUCN_CONFIG[statusCode] || IUCN_CONFIG['NE']
 
   return (
@@ -155,13 +157,13 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
               href={animal.images[0].url}
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute bottom-2 right-3 text-[10px] text-white/75 bg-black/35 backdrop-blur-sm px-2 py-0.5 rounded-full hover:text-white hover:bg-black/50 transition-colors"
+              className="absolute bottom-2 right-3 text-micro text-white/75 bg-black/35 backdrop-blur-sm px-2 py-0.5 rounded-full hover:text-white hover:bg-black/50 transition-colors"
               title="View full resolution"
             >
               ⤢ {animal.images[0].credit || 'Wikipedia / Wikimedia Commons'}
             </a>
           ) : animal.images[0]?.credit ? (
-            <span className="absolute bottom-2 right-3 text-[10px] text-white/75 bg-black/35 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none select-none">
+            <span className="absolute bottom-2 right-3 text-micro text-white/75 bg-black/35 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none select-none">
               {animal.images[0].credit}
             </span>
           ) : null}
@@ -178,7 +180,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
           <div className="flex items-center gap-4 mb-2">
             <span className="text-4xl drop-shadow-md">{animal.emoji}</span>
             <div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground drop-shadow-md font-[var(--font-heading)]">
+              <h1 className="text-4xl sm:text-5xl font-bold text-foreground drop-shadow-md font-heading">
                 {animal.commonName}
               </h1>
               <p className="text-lg text-foreground/80 font-medium italic mt-1 drop-shadow-sm">
@@ -210,9 +212,18 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
                 onClick={() => toggleFavorite(animal.slug)}
                 className={`press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border backdrop-blur-sm transition-colors ${
                   isFav
-                    ? 'bg-red-500/15 text-red-500 border-red-500/30'
+                    ? ''
                     : 'bg-background/50 text-foreground/80 border-foreground/10 hover:bg-background'
                 }`}
+                style={
+                  isFav
+                    ? {
+                        background: 'color-mix(in srgb, var(--natura-coral) 15%, transparent)',
+                        color: 'var(--natura-coral)',
+                        borderColor: 'color-mix(in srgb, var(--natura-coral) 30%, transparent)',
+                      }
+                    : undefined
+                }
                 aria-label={isFav ? tr.favorites.removeFromFavorites : tr.favorites.addToFavorites}
               >
                 <Heart size={15} className={isFav ? 'heart-pop' : ''} fill={isFav ? 'currentColor' : 'none'} />
@@ -236,8 +247,8 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <StatCard icon="🏷️" label={t(locale).detail.classification} value={classification} />
           <StatCard icon="🍽️" label={t(locale).detail.diet} value={diet} />
-          {animal.lifespan && <StatCard icon="⏱️" label={t(locale).detail.lifespan} value={lifespanValue} />}
-          {animal.weight && <StatCard icon="⚖️" label={t(locale).detail.weight} value={weightValue} />}
+          {animal.lifespan && animal.lifespan.max > 0 && <StatCard icon="⏱️" label={t(locale).detail.lifespan} value={lifespanValue} />}
+          {animal.weight && animal.weight.max > 0 && <StatCard icon="⚖️" label={t(locale).detail.weight} value={weightValue} />}
         </div>
 
         {/* Population Trend Chart */}
@@ -299,7 +310,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {Object.entries(animal.taxonomy).map(([key, val]) => (
                 <div key={key} className="glass-card rounded-xl px-4 py-3 group hover:shadow-md transition-all duration-200">
-                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider">
                     {t(locale).detail[key as keyof TranslationStrings['detail']] || key}
                   </div>
                   <div className="text-sm font-medium text-foreground italic mt-0.5 group-hover:text-primary transition-colors">{val as string}</div>
@@ -319,7 +330,7 @@ export default function AnimalProfileView({ animal }: { animal: AtlasProfile }):
                   className="flex gap-3 glass-card rounded-xl px-4 py-3 hover:shadow-md transition-all duration-200"
                 >
                   <span
-                    className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white mt-0.5"
+                    className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-micro font-bold text-white mt-0.5"
                     style={{ background: iucn.bg }}
                   >
                     {i + 1}

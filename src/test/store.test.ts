@@ -14,6 +14,7 @@ describe('useMapStore', () => {
       mobileOpen: false,
       compareIds: [],
       compareOpen: false,
+      focusTarget: null,
     })
   })
 
@@ -48,13 +49,13 @@ describe('useMapStore', () => {
   })
 
   it('defaults to the minimal map style', () => {
-    expect(useMapStore.getInitialState().mapStyle).toBe('satellite')
+    expect(useMapStore.getInitialState().mapStyle).toBe('minimal')
   })
 
   it('keeps the minimal style for the light theme', () => {
     useMapStore.getState().setMapStyle('dark')
     useMapStore.getState().setTheme('light')
-    expect(useMapStore.getState().mapStyle).toBe('satellite')
+    expect(useMapStore.getState().mapStyle).toBe('minimal')
   })
 
   it('switches atlas mode and clears stale map state', () => {
@@ -87,8 +88,21 @@ describe('useMapStore', () => {
   it('cycles map style', () => {
     useMapStore.getState().setMapStyle('dark')
     expect(useMapStore.getState().mapStyle).toBe('dark')
-    useMapStore.getState().setMapStyle('satellite')
-    expect(useMapStore.getState().mapStyle).toBe('satellite')
+    useMapStore.getState().setMapStyle('minimal')
+    expect(useMapStore.getState().mapStyle).toBe('minimal')
+  })
+
+  it('requests a camera focus with an incrementing nonce', () => {
+    useMapStore.getState().setFocusTarget({ lng: 110, lat: -7 })
+    const first = useMapStore.getState().focusTarget
+    expect(first).toMatchObject({ lng: 110, lat: -7, nonce: 1 })
+
+    // Same coordinates must still re-trigger the camera (nonce bumps)
+    useMapStore.getState().setFocusTarget({ lng: 110, lat: -7 })
+    expect(useMapStore.getState().focusTarget?.nonce).toBe(2)
+
+    useMapStore.getState().setFocusTarget(null)
+    expect(useMapStore.getState().focusTarget).toBeNull()
   })
 
   it('sets theme', () => {

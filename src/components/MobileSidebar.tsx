@@ -3,18 +3,19 @@ import React from 'react';
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
-import { Search, Menu, X, Gamepad2 } from "lucide-react";
+import { Search, Menu, X, Gamepad2, Download } from "lucide-react";
 import Link from "next/link";
 import { type AnimalEntry } from "../data/countries";
 import { useMapStore } from "../store/useMapStore";
 import { useAtlasData } from "../hooks/useAtlasAnimals";
 import { useFilteredAnimals } from "../hooks/useAnimals";
+import { useInstallPrompt } from "../hooks/useInstallPrompt";
 import { audioService } from "./AudioService";
 import { t } from "../lib/i18n";
+import { SHEET_SPRING } from "../lib/motion";
 
-import { CONTINENT_COLORS } from "../lib/regions";
+import { regionColor } from "../lib/regions";
 
-const SHEET_SPRING = { type: "spring", duration: 0.5, bounce: 0.2 } as const;
 
 /** Mobile sidebar sheet with search, region filters, and animal list.
  *  Radix Dialog owns a11y; motion owns the slide-up/down and the
@@ -26,9 +27,11 @@ export default function MobileSidebar(): React.JSX.Element {
   const dragControls = useDragControls();
   const { regions } = useAtlasData();
   const filtered = useFilteredAnimals();
+  const { canInstall, promptInstall } = useInstallPrompt();
 
   const flyTo = (c: AnimalEntry) => {
     useMapStore.getState().setSelectedId(c.id);
+    useMapStore.getState().setFocusTarget({ lng: c.lng, lat: c.lat });
     setMobileOpen(false);
   };
 
@@ -63,6 +66,7 @@ export default function MobileSidebar(): React.JSX.Element {
               <Dialog.Content asChild forceMount aria-label={tr.search}>
                 <motion.aside
                   className="fixed inset-x-0 bottom-0 z-30 flex max-h-[60vh] flex-col gap-3 rounded-t-2xl border-t border-border bg-card p-4 outline-none md:hidden"
+                  style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
                   initial={reduceMotion ? { y: 0, opacity: 0 } : { y: '100%' }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={reduceMotion ? { opacity: 0 } : { y: '100%' }}
@@ -99,6 +103,17 @@ export default function MobileSidebar(): React.JSX.Element {
                     {tr.quiz.title}
                   </Link>
 
+                  {/* PWA install — only when the browser fired beforeinstallprompt */}
+                  {canInstall && (
+                    <button
+                      onClick={promptInstall}
+                      className="flex items-center gap-2 rounded-xl border border-border bg-accent/50 px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                    >
+                      <Download size={16} aria-hidden className="text-primary" />
+                      {tr.install.title}
+                    </button>
+                  )}
+
                   <div className="relative">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input
@@ -130,7 +145,7 @@ export default function MobileSidebar(): React.JSX.Element {
                     {filtered.map((c, i) => {
                       const isSelected = selectedId === c.id;
                       const isHovered = sidebarHoveredId === c.id;
-                      const color = CONTINENT_COLORS[c.region] || "#6366f1";
+                      const color = regionColor(c.region);
                       return (
                         <button
                           key={c.id}

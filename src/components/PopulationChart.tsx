@@ -53,12 +53,12 @@ export default function PopulationChart({
   return (
     <div className="glass-card rounded-xl p-3 group hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider">
           {trendTr.title}
         </div>
         <div className="flex items-center gap-1">
           <span className="text-xs">{icon}</span>
-          <span className="text-[10px] font-bold" style={{ color }}>
+          <span className="text-micro font-bold" style={{ color }}>
             {label}
           </span>
         </div>

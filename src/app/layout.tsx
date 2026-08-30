@@ -4,6 +4,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegistrar from "../components/ServiceWorkerRegistrar";
 import LocaleSync from "../components/LocaleSync";
+import ToastViewport from "../components/Toast";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -103,6 +104,7 @@ export default function RootLayout({
         </a>
         <ServiceWorkerRegistrar />
         <LocaleSync />
+        <ToastViewport />
         {children}
       </body>
     </html>

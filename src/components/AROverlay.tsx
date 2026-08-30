@@ -146,7 +146,7 @@ export default function AROverlay({ onClose }: AROverlayProps): React.JSX.Elemen
       <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'var(--background)' }}>
         <div className="text-center p-8 max-w-sm">
           <CameraOff size={48} className="mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-xl font-semibold text-foreground font-[var(--font-heading)] mb-2">
+          <h2 className="text-xl font-semibold text-foreground font-heading mb-2">
             AR Not Available
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
@@ -219,10 +219,10 @@ export default function AROverlay({ onClose }: AROverlayProps): React.JSX.Elemen
               <div className="flex flex-col items-center animate-fade-in-scale">
                 <span className="text-3xl drop-shadow-lg">{animal.emoji}</span>
                 <div className="glass-card rounded-lg px-2 py-1 mt-1 text-center min-w-[80px]">
-                  <div className="text-[10px] font-semibold text-white truncate max-w-[100px]">
+                  <div className="text-micro font-semibold text-white truncate max-w-[100px]">
                     {animal.animal}
                   </div>
-                  <div className="text-[9px] text-white/60">
+                  <div className="text-micro text-white/60">
                     {formatDistance(animal.distance)}
                   </div>
                 </div>

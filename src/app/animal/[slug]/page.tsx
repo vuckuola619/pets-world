@@ -1,11 +1,17 @@
 import React from 'react'
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import AnimalProfileView from './AnimalProfileView'
 import { getAtlasProfileBySlug, getAtlasProfileStaticParams } from '@/data/atlasProfiles'
 
 interface Props {
   params: Promise<{ slug: string }>
 }
+
+/** Static export renders only the slugs from generateStaticParams — anything
+ *  else must 404 (themed not-found) instead of erroring on an unrendered
+ *  param, in dev and on the CDN. */
+export const dynamicParams = false
 
 const BASE_URL = 'https://pets-world.pages.dev'
 
@@ -71,7 +77,7 @@ function SpeciesJsonLd({ animal }: { animal: NonNullable<ReturnType<typeof getAt
 export default async function AnimalDetailPage({ params }: Props): Promise<React.JSX.Element> {
   const { slug } = await params
   const animal = getAtlasProfileBySlug(slug)
-  if (!animal) return <div>Not found</div>;
+  if (!animal) notFound()
   return (
     <>
       <SpeciesJsonLd animal={animal} />

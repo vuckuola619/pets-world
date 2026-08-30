@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import type { Locale } from '../lib/i18n'
+import { useToastStore } from './useToastStore'
 
 /** Supported map tile style names */
-type MapStyleName = 'voyager' | 'dark' | 'satellite'
+type MapStyleName = 'voyager' | 'dark' | 'minimal'
 
 /** Active atlas data mode */
 type AtlasMode = 'wildlife' | 'prehistoric'
@@ -12,6 +13,14 @@ type ThemeMode = 'light' | 'dark' | 'system'
 
 /** Maximum species that can be compared at once */
 const MAX_COMPARE = 3
+
+/** Camera-focus request: MapView flies to the coordinates when the nonce
+ *  changes. Set by list/search selections made outside the map. */
+export interface FocusTarget {
+  lng: number
+  lat: number
+  nonce: number
+}
 
 /** Global map state shape */
 interface MapStore {
@@ -51,6 +60,8 @@ interface MapStore {
   clearFavorites: () => void
   setShowFavoritesOnly: (show: boolean) => void
   setArOpen: (open: boolean) => void
+  focusTarget: FocusTarget | null
+  setFocusTarget: (target: { lng: number; lat: number } | null) => void
 }
 
 export type { AtlasMode, MapStyleName, ThemeMode }
@@ -106,7 +117,7 @@ export const useMapStore = create<MapStore>((set) => ({
   sidebarHoveredId: null,
   searchQuery: '',
   activeRegion: 'All',
-  mapStyle: 'satellite',
+  mapStyle: 'minimal',
   searchOpen: false,
   mobileOpen: false,
   locale: 'en' as Locale,
@@ -133,7 +144,7 @@ export const useMapStore = create<MapStore>((set) => ({
   setTheme: (t) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('wildlife-theme', t)
-      set({ theme: t, mapStyle: 'satellite' })
+      set({ theme: t, mapStyle: 'minimal' })
     } else {
       set({ theme: t })
     }
@@ -152,7 +163,13 @@ export const useMapStore = create<MapStore>((set) => ({
     }),
   addCompare: (id) =>
     set((s) => {
-      if (s.compareIds.includes(id) || s.compareIds.length >= MAX_COMPARE) return s
+      if (s.compareIds.includes(id)) return s
+      if (s.compareIds.length >= MAX_COMPARE) {
+        // The tap would exceed the compare bar's capacity — tell the user
+        // instead of silently ignoring it.
+        useToastStore.getState().pushToast('compareLimit')
+        return s
+      }
       return { compareIds: [...s.compareIds, id] }
     }),
   removeCompare: (id) =>
@@ -173,4 +190,11 @@ export const useMapStore = create<MapStore>((set) => ({
   },
   setShowFavoritesOnly: (show) => set({ showFavoritesOnly: show }),
   setArOpen: (open) => set({ arOpen: open }),
+  focusTarget: null,
+  setFocusTarget: (target) =>
+    set((s) => ({
+      focusTarget: target
+        ? { ...target, nonce: (s.focusTarget?.nonce ?? 0) + 1 }
+        : null,
+    })),
 }))
