@@ -8,6 +8,11 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
+/** Static export renders only the slugs from generateStaticParams — anything
+ *  else must 404 (themed not-found) instead of erroring on an unrendered
+ *  param, in dev and on the CDN. */
+export const dynamicParams = false
+
 const BASE_URL = 'https://pets-world.pages.dev'
 
 /** Generates static params for all animal pages */

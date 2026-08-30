@@ -8,7 +8,7 @@ import React from 'react';
  */
 /* eslint-disable react-hooks/preserve-manual-memoization */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { GitCompareArrows, Volume2, Volume1, BookOpen } from "lucide-react";
 import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -57,16 +57,19 @@ const MAP_CANVAS_FILTERS: Record<MapStyleName, string> = {
 };
 
 /** Era Purba tints the basemap toward a warm fossil palette (dinosaur-era
- *  spec). Composed on top of the per-style filter. */
-const PREHISTORIC_CANVAS_FILTER =
-  "sepia(0.32) saturate(0.85) hue-rotate(-8deg) brightness(1.02)";
+ *  spec). Dark needs a much stronger lift — sepia over a near-black canvas
+ *  is invisible — so the warm filter is chosen per style. */
+const PREHISTORIC_FILTER_LIGHT =
+  "sepia(0.35) saturate(0.9) hue-rotate(-10deg) brightness(1.03)";
+const PREHISTORIC_FILTER_DARK =
+  "sepia(0.5) hue-rotate(-18deg) saturate(1.05) brightness(1.3) contrast(0.95)";
 
 function composeCanvasFilter(style: MapStyleName, prehistoric: boolean): string {
+  if (!prehistoric) return MAP_CANVAS_FILTERS[style];
+  const warm =
+    style === "dark" ? PREHISTORIC_FILTER_DARK : PREHISTORIC_FILTER_LIGHT;
   const base = MAP_CANVAS_FILTERS[style];
-  if (!prehistoric) return base;
-  return base === "none"
-    ? PREHISTORIC_CANVAS_FILTER
-    : `${base} ${PREHISTORIC_CANVAS_FILTER}`;
+  return base === "none" ? warm : `${base} ${warm}`;
 }
 
 interface ViewState {
@@ -121,6 +124,17 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const popupRef = useRef<HTMLDivElement>(null);
   const CARD_W = 260;
   const IMG_SIZE = 200;
+  /* Real popup height (content varies per species; the estimate overshoots
+     and pushed the card past the viewport bottom). ResizeObserver delivers
+     the initial measurement on observe — no synchronous setState needed. */
+  const [popupH, setPopupH] = useState(520);
+  useLayoutEffect(() => {
+    const el = popupRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setPopupH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [selected, imageLoading, imageUrl]);
 
   // Positions are refreshed from map events (load, move, hover, click) — a
   // popup only ever shows after one of those, so no render-time projection.
@@ -160,6 +174,17 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
   const onMapResize = useCallback(() => {
     updateMarkerScreenPos(filtered);
   }, [updateMarkerScreenPos, filtered]);
+
+  /* Selections from outside the map don't move the camera themselves
+     (focusTarget flies it, but jumps/short flights may end without another
+     move event). Reproject once per list/load change so the popup never
+     stalls waiting for a map event. Deferred to a frame like onMapMove —
+     synchronous setState here trips the cascading-render rule. */
+  useEffect(() => {
+    if (!isMapLoaded) return;
+    const raf = requestAnimationFrame(() => updateMarkerScreenPos(filtered));
+    return () => cancelAnimationFrame(raf);
+  }, [isMapLoaded, filtered, updateMarkerScreenPos]);
 
   const playSound = useCallback(() => {
     if (!selected) return;
@@ -450,7 +475,7 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
           const pos = projectToScreen(selected.id);
           if (!pos) return null;
           if (!viewport || viewport.w < 768) return null;
-          const ph = 520;
+          const ph = popupH;
           const pw = CARD_W;
           const GAP = 16;
           const vw = viewport.w;
@@ -576,7 +601,9 @@ export default function MapView({ viewState, setViewState }: MapViewProps): Reac
 
       {/* IUCN Legend with full status names on hover */}
       <div className="hidden md:block absolute bottom-4 left-4 z-10">
-        <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible" }}>
+        {/* Nearly-opaque backdrop: the plain glass card let bright map labels
+            and markers bleed through as ghost fragments over the codes. */}
+        <div className="glass-card rounded-xl shadow-sm px-3 py-2.5" style={{ overflow: "visible", background: 'color-mix(in srgb, var(--card) 97%, transparent)' }}>
           <div className="text-micro font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title={tr.iucnInfo.intro}>
             IUCN Conservation Status
           </div>

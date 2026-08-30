@@ -1,5 +1,6 @@
 'use client'
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Bone, Check, ChevronDown, Leaf, type LucideIcon } from 'lucide-react';
 
 import { t } from '../lib/i18n';
@@ -26,7 +27,27 @@ export default function AtlasModeDropdown({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  /* The menu is portaled to <body> with fixed coordinates: the header is an
+     overflow-x scroll container, and CSS turns overflow-y into clip for such
+     containers, so an absolutely-positioned menu inside it got cut off. */
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const position = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) setMenuPos({ top: rect.bottom + 8, left: rect.left });
+    };
+    position();
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', position, true);
+    return () => {
+      window.removeEventListener('resize', position);
+      window.removeEventListener('scroll', position, true);
+    };
+  }, [open]);
 
   const isPrehistoric = atlasMode === 'prehistoric';
   const strings = t(locale);
@@ -42,11 +63,15 @@ export default function AtlasModeDropdown({
     [atlasMode, setAtlasMode],
   );
 
-  // Close when a press lands anywhere outside the widget
+  // Close when a press lands anywhere outside the widget (including the
+  // portaled menu — treat it as inside)
   useEffect(() => {
     if (!open) return;
     const handlePointerDown = (event: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const insideTrigger = rootRef.current && rootRef.current.contains(target);
+      const insideMenu = menuRef.current && menuRef.current.contains(target);
+      if (!insideTrigger && !insideMenu) {
         setOpen(false);
       }
     };
@@ -124,12 +149,15 @@ export default function AtlasModeDropdown({
         </span>
       </button>
 
-      {open && (
-        <div
-          role="listbox"
-          aria-label={strings.atlasModes[atlasMode]}
-          className="animate-fade-in-scale absolute left-0 top-full z-50 mt-2 w-56 origin-top-left overflow-hidden rounded-xl border border-border bg-card p-1.5 shadow-xl"
-        >
+      {open && menuPos &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="listbox"
+            aria-label={strings.atlasModes[atlasMode]}
+            className="animate-fade-in-scale fixed z-50 w-56 overflow-hidden rounded-xl border border-border bg-card p-1.5 shadow-xl"
+            style={{ top: menuPos.top, left: menuPos.left }}
+          >
           {MODE_OPTIONS.map((option, index) => {
             const selected = option.value === atlasMode;
             const OptionIcon = option.Icon;
@@ -159,8 +187,9 @@ export default function AtlasModeDropdown({
               </button>
             );
           })}
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
